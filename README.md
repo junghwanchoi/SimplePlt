@@ -1,4 +1,4 @@
-## working program and not finalized
+* notice: progrmming is under working
 
 
 # SimplePlt
