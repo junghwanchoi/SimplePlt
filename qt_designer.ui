@@ -102,17 +102,7 @@
      </size>
     </property>
    </widget>
-   <widget class="QListView" name="listView_Columns">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>50</y>
-      <width>256</width>
-      <height>192</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QTableWidget" name="tableWidget_PltAxis">
+   <widget class="QTableWidget" name="table">
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -126,7 +116,7 @@
     <property name="geometry">
      <rect>
       <x>70</x>
-      <y>260</y>
+      <y>250</y>
       <width>31</width>
       <height>23</height>
      </rect>
@@ -138,14 +128,40 @@
    <widget class="QPushButton" name="pushButton_Down">
     <property name="geometry">
      <rect>
-      <x>120</x>
-      <y>260</y>
+      <x>30</x>
+      <y>250</y>
       <width>31</width>
       <height>23</height>
      </rect>
     </property>
     <property name="text">
      <string>Dn</string>
+    </property>
+   </widget>
+   <widget class="QListWidget" name="listWidget_Columns">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>50</y>
+      <width>256</width>
+      <height>192</height>
+     </rect>
+    </property>
+    <property name="selectionMode">
+     <enum>QAbstractItemView::MultiSelection</enum>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButton_Plt">
+    <property name="geometry">
+     <rect>
+      <x>170</x>
+      <y>250</y>
+      <width>71</width>
+      <height>28</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Plt</string>
     </property>
    </widget>
   </widget>
@@ -155,7 +171,7 @@
      <x>0</x>
      <y>0</y>
      <width>898</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
   </widget>
