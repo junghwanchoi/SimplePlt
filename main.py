@@ -68,6 +68,9 @@ class MatplotlibWidget(QMainWindow):
         self.table.setColumnWidth(1, 3)
         self.table.cellClicked.connect(self._cellclicked)
 
+        # matplotlib widget
+        #self.MplWidget.canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
 
     # .csv 파일을 open 했을때 수행하는 일
     def OnBtnClick_OpenFile(self):
@@ -281,6 +284,7 @@ class MatplotlibWidget(QMainWindow):
                     y_data = SPL_dfData[Y1Attr].to_numpy( )
                     self.MplWidget.canvas.axes.plot( x_data, y_data )
 
+                self.MplWidget.canvas.axes.grid(True)
                 self.MplWidget.canvas.axes.legend( lstY1Attr, loc='upper right')
                 self.MplWidget.canvas.axes.set_title( SPL_strFileName )
 
