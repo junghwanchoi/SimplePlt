@@ -3,6 +3,7 @@
 # ------------------------------------------------------
 from PyQt5.QtWidgets import *
 from PyQt5.uic import loadUi
+from PyQt5.QtGui import *
 from PyQt5.QtCore import Qt
 
 from matplotlib.backends.backend_qt5agg import (NavigationToolbar2QT as NavigationToolbar)
@@ -13,7 +14,7 @@ import pandas as pd
 import os
 
 SPL_dfData = pd.DataFrame()
-SPL_lstChkData = [ ["signame", 0]  ]
+SPL_lstChkData = [  ] # ["  signal name  ", 0]
 SPL_strFileName = ""
 
 
@@ -29,7 +30,7 @@ class MatplotlibWidget(QMainWindow):
 
         loadUi("qt_designer.ui",self)
 
-        self.setWindowTitle("PyQt5 & Matplotlib Example GUI")
+        self.setWindowTitle("Simple Matplotlib GUI")
         
         # 툴바
         self.addToolBar(NavigationToolbar(self.MplWidget.canvas, self))
@@ -38,6 +39,12 @@ class MatplotlibWidget(QMainWindow):
         self.pushButton_Up.clicked.connect(self.OnBtnClick_Up)
         self.pushButton_Down.clicked.connect(self.OnBtnClick_Down)
         self.pushButton_Plt.clicked.connect(self.OnBtnClick_Plt)
+
+        self.pushButton_OpenFile.setIcon(QIcon('iconFile.png'))
+        self.pushButton_Up.setIcon(QIcon('iconUp.png'))
+        self.pushButton_Down.setIcon(QIcon('iconDown.png'))
+        self.pushButton_Plt.setIcon(QIcon('iconPlot.png'))
+
 
         # List Widget
         #  CSV 파일의 column 이름을 표시
@@ -59,13 +66,14 @@ class MatplotlibWidget(QMainWindow):
                 iCol = i + 1
                 ChkBox = QCheckBox()
                 self.table.setCellWidget(iRow, iCol, ChkBox)
+                ChkBox.setContentsMargins(0, 0, 0, 0);
                 ChkBox.stateChanged.connect(self.__checkbox_change)  # sender() 확인용 예..
+                ChkBox.setStyleSheet("text-align: center; margin-left:10%; margin-right:10%;");
 
         self.table.horizontalHeaderItem(0).setToolTip("Column Name in CSV")  # header tooltip
 
         self.table.resizeColumnsToContents()
         self.table.resizeRowsToContents()
-        self.table.setColumnWidth(1, 3)
         self.table.cellClicked.connect(self._cellclicked)
 
         # matplotlib widget
@@ -201,6 +209,7 @@ class MatplotlibWidget(QMainWindow):
                 iCol = i + 1
                 ChkBox = QCheckBox()
                 self.table.setCellWidget(iRow, iCol, ChkBox )
+                ChkBox.setStyleSheet("text-align: center; margin-left:10%; margin-right:10%;");
                 ChkBox.stateChanged.connect(self.__checkbox_change)  # sender() 확인용 예..
 
         self.table.horizontalHeaderItem(0).setToolTip("Column Name in CSV") # header tooltip
