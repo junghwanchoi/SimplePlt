@@ -1,7 +1,7 @@
 # ------------------------------------------------------
 # -------------------- mplwidget.py --------------------
 # ------------------------------------------------------
-from PyQt5.QtWidgets import*
+from PyQt5.QtWidgets import *
 
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 
@@ -20,5 +20,6 @@ class MplWidget(QWidget):
         vertical_layout.addWidget(self.canvas)
         
         self.canvas.axes = self.canvas.figure.add_subplot(111)
+        self.canvas.axes_2 = self.canvas.axes.twinx()
         self.setLayout(vertical_layout)
 
