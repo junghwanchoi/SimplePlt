@@ -164,20 +164,16 @@ class MatplotlibWidget(QMainWindow):
                     # global 변수 업데이트
                     SPL_lstChkData[lstIdx[0].row()][1] = lstIdx[0].column()
                 else:
+                    # 만일 check  상태에서 클릭한다면
+                    if( SPL_lstChkData[lstIdx[0].row()][1] == lstIdx[0].column() ):
+                        SPL_lstChkData[lstIdx[0].row()][1] = 0
                     print( lstIdx[0].row(), lstIdx[0].column(), " no checked")
 
             else:
                 pass
             #    _ = QMessageBox.information(self, 'checkbox', "checkbox 아닙니다.")
 
-            # Global 변수 대로 상태 업데이트
-            for iRow, (dname, iChkPos) in enumerate(SPL_lstChkData):
-                for iCol in range( 1, 4 ): # X, Y1, Y2
-                    ckbox = self.table.cellWidget( iRow, iCol )
-                    if( SPL_lstChkData[iRow][1] == iCol ):
-                        ckbox.setChecked( True )
-                    else:
-                        ckbox.setChecked( False )
+            self._UpdateCheckBoxState()
 
 
 
@@ -210,16 +206,7 @@ class MatplotlibWidget(QMainWindow):
 
         self.table.cellClicked.connect(self._cellclicked)
 
-        # Global 변수 대로 상태 업데이트
-        for iRow, (dname, iChkPos) in enumerate(SPL_lstChkData):
-            for iCol in range( 1, 4 ): # X, Y1, Y2
-                ckbox = self.table.cellWidget( iRow, iCol )
-                if isinstance(ckbox, QCheckBox):
-                    if( SPL_lstChkData[iRow][1] == iCol ):
-                        ckbox.setChecked( True )
-                    else:
-                        ckbox.setChecked( False )
-
+        self._UpdateCheckBoxState()
 
 
     def _UpdateCheckBoxState(self):
@@ -313,3 +300,4 @@ app = QApplication([])
 window = MatplotlibWidget()
 window.show()
 app.exec_()
+
