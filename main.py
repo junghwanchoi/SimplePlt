@@ -7,6 +7,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import Qt
 
 from matplotlib.backends.backend_qt5agg import (NavigationToolbar2QT as NavigationToolbar)
+from matplotlib import cm
 
 import numpy as np
 import random
@@ -243,6 +244,7 @@ class MatplotlibWidget(QMainWindow):
         lstY1Attr = []
         lstY2Attr = []
 
+        # 각축별로 뭘 그려야 하는지
         for x0, x1 in SPL_lstChkData:
 
             if( x1 == 1 ): # X axis
@@ -254,23 +256,45 @@ class MatplotlibWidget(QMainWindow):
             else:
                 pass
 
-        if( len(SPL_dfData) > 0):
 
-            self.MplWidget.canvas.axes.clear()
+        if( len(SPL_dfData) > 0): # DataFrame을 읽어 들였다면
 
-            if( len(lstY1Attr) > 0):
-                x_data = np.arange( len( SPL_dfData[lstY1Attr[0]] ) )
+            self.MplWidget.canvas.axes.clear() # 화면을 지움
+            self.MplWidget.canvas.axes_2.clear()  # 화면을 지움
 
-                if( len(XAttr) > 0 ):
+            if( (len(lstY1Attr) > 0) or (len(lstY2Attr) > 0) ): # Y1 에 그릴 데이터가 있다면
+
+                # X축에 그릴 데이터
+                if( len(XAttr) > 0 ): # X에 그릴 데이터가 있다면
                     x_data = SPL_dfData[XAttr].to_numpy( )
+                else:
+                    if (len(lstY1Attr) > 0):  # Y1 에 그릴 데이터가 있다면
+                        x_data = np.arange( len( SPL_dfData[lstY1Attr[0]] ) ) # X 를 선택안했을 경우를 대비해서 X 축 데이터 만듦
+                    elif (len(lstY2Attr) > 0):  # Y2 에 그릴 데이터가 있다면
+                        x_data = np.arange( len( SPL_dfData[lstY2Attr[0]] ) ) # X 를 선택안했을 경우를 대비해서 X 축 데이터 만듦
 
-                for Y1Attr in lstY1Attr :
-                    y_data = SPL_dfData[Y1Attr].to_numpy( )
-                    self.MplWidget.canvas.axes.plot( x_data, y_data )
+                # Y1축에 그릴 데이터
+                if (len(lstY1Attr) > 0):  # Y1 에 그릴 데이터가 있다면
+                    colorsY1 = cm.gist_rainbow( np.linspace(0, 1, len(lstY1Attr)) )
+                    for i, Y1Attr in enumerate(lstY1Attr) :
+                        y_data = SPL_dfData[Y1Attr].to_numpy( )
+                        self.MplWidget.canvas.axes.plot( x_data, y_data, color=colorsY1[i] )
+
+                    self.MplWidget.canvas.axes.legend( lstY1Attr, loc='upper left')
+
+                # Y2축에 그릴 데이터
+                if (len(lstY2Attr) > 0):  # Y2 에 그릴 데이터가 있다면
+                    colorsY2 = cm.rainbow( np.linspace(0, 1, len(lstY2Attr)) )
+                    for i, Y2Attr in enumerate(lstY2Attr) :
+                        y2_data = SPL_dfData[Y2Attr].to_numpy( )
+                        self.MplWidget.canvas.axes_2.plot(x_data, y2_data, color=colorsY2[i] )
+
+                    self.MplWidget.canvas.axes_2.legend( lstY2Attr, loc='upper right')
+
 
                 self.MplWidget.canvas.axes.grid(True)
-                self.MplWidget.canvas.axes.legend( lstY1Attr, loc='upper right')
                 self.MplWidget.canvas.axes.set_title( SPL_strFileName )
+                #self.MplWidget.canvas.axes.title.set_size(20)
 
                 try:
                     self.MplWidget.canvas.draw()
@@ -300,4 +324,5 @@ app = QApplication([])
 window = MatplotlibWidget()
 window.show()
 app.exec_()
+
 
