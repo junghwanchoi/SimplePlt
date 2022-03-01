@@ -188,14 +188,7 @@ class MatplotlibWidget(QMainWindow):
         self.table.clearContents()  # 헤더는 제거 안함.
         self.table.setRowCount( len(SPL_lstChkData) )
         self.table.setColumnCount(4)
-
         self.table.setHorizontalHeaderLabels(["Name", "X", "Y1", "Y2"])
-        '''
-        self.table.setHorizontalHeaderItem( 0, QTableWidgetItem('Name'))
-        self.table.setHorizontalHeaderItem( 1, QTableWidgetItem('X'))
-        self.table.setHorizontalHeaderItem( 2, QTableWidgetItem('Y1'))
-        self.table.setHorizontalHeaderItem( 3, QTableWidgetItem('Y2'))
-        '''
 
         for iRow, (dname, iChkPos) in enumerate(SPL_lstChkData):
             # "name"
@@ -320,4 +313,3 @@ app = QApplication([])
 window = MatplotlibWidget()
 window.show()
 app.exec_()
-
