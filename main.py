@@ -39,7 +39,7 @@ class MatplotlibWidget(QMainWindow):
         self.pushButton_Up.clicked.connect(self.OnBtnClick_Up)
         self.pushButton_Down.clicked.connect(self.OnBtnClick_Down)
         self.pushButton_Plt.clicked.connect(self.OnBtnClick_Plt)
-
+		# 아이콘 표시하기
         self.pushButton_OpenFile.setIcon(QIcon('iconFile.png'))
         self.pushButton_Up.setIcon(QIcon('iconUp.png'))
         self.pushButton_Down.setIcon(QIcon('iconDown.png'))
@@ -53,7 +53,7 @@ class MatplotlibWidget(QMainWindow):
         global SPL_lstChkData
 
         # TableWidget
-        self.table.setRowCount(1)
+        self.table.setRowCount( len(SPL_lstChkData) )
         self.table.setColumnCount(4)
 
         self.table.setHorizontalHeaderLabels(["Name", "X", "Y1", "Y2"])
@@ -66,18 +66,14 @@ class MatplotlibWidget(QMainWindow):
                 iCol = i + 1
                 ChkBox = QCheckBox()
                 self.table.setCellWidget(iRow, iCol, ChkBox)
-                ChkBox.setContentsMargins(0, 0, 0, 0);
                 ChkBox.stateChanged.connect(self.__checkbox_change)  # sender() 확인용 예..
-                ChkBox.setStyleSheet("text-align: center; margin-left:10%; margin-right:10%;");
 
         self.table.horizontalHeaderItem(0).setToolTip("Column Name in CSV")  # header tooltip
 
-        self.table.resizeColumnsToContents()
-        self.table.resizeRowsToContents()
-        self.table.cellClicked.connect(self._cellclicked)
-
-        # matplotlib widget
-        #self.MplWidget.canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.table.setColumnWidth(1, 10)
+        self.table.setColumnWidth(2, 10)
+        self.table.setColumnWidth(3, 10)
+		
 
 
     # .csv 파일을 open 했을때 수행하는 일
@@ -210,15 +206,14 @@ class MatplotlibWidget(QMainWindow):
                 ChkBox = QCheckBox()
                 self.table.setCellWidget(iRow, iCol, ChkBox )
                 ChkBox.setStyleSheet("text-align: center; margin-left:10%; margin-right:10%;");
+                ChkBox.setContentsMargins(0, 0, 0, 0);
                 ChkBox.stateChanged.connect(self.__checkbox_change)  # sender() 확인용 예..
 
         self.table.horizontalHeaderItem(0).setToolTip("Column Name in CSV") # header tooltip
 
         self.table.resizeColumnsToContents()
         self.table.resizeRowsToContents()
-        self.table.setColumnWidth(1, 3)
-        self.table.setColumnWidth(2, 3)
-        self.table.setColumnWidth(3, 3)
+
 
         self.table.cellClicked.connect(self._cellclicked)
 
