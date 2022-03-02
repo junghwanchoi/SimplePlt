@@ -15,7 +15,7 @@ import pandas as pd
 import os
 
 SPL_dfData = pd.DataFrame()
-SPL_lstChkData = [  ] # ["  signal name  ", 0]
+SPL_lstChkData = [] # ["  signal name  ", 0]
 SPL_strFileName = ""
 
 
@@ -29,9 +29,11 @@ class MatplotlibWidget(QMainWindow):
         
         QMainWindow.__init__(self)
 
-        loadUi("qt_designer.ui",self)
 
-        self.setWindowTitle("Simple Matplotlib GUI")
+        loadUi("qt_designer.ui",self)
+        self.setWindowIcon(QIcon('iconPlot.png')) # 맨왼쪽위 아이콘
+        self.setWindowTitle("Simple Matplotlib w/ GUI")
+
         
         # 툴바
         self.addToolBar(NavigationToolbar(self.MplWidget.canvas, self))
@@ -40,7 +42,7 @@ class MatplotlibWidget(QMainWindow):
         self.pushButton_Up.clicked.connect(self.OnBtnClick_Up)
         self.pushButton_Down.clicked.connect(self.OnBtnClick_Down)
         self.pushButton_Plt.clicked.connect(self.OnBtnClick_Plt)
-		# 아이콘 표시하기
+		# 버튼 아이콘 표시하기
         self.pushButton_OpenFile.setIcon(QIcon('iconFile.png'))
         self.pushButton_Up.setIcon(QIcon('iconUp.png'))
         self.pushButton_Down.setIcon(QIcon('iconDown.png'))
@@ -81,22 +83,29 @@ class MatplotlibWidget(QMainWindow):
     def OnBtnClick_OpenFile(self):
 
         global SPL_strFileName
+        global SPL_dfData
+        global SPL_lstChkData
 
         lstFileName = QFileDialog.getOpenFileName( self, "Open file", "./", "CSV (*.csv)")
 
         if lstFileName[0]:
             SPL_strFileName = os.path.basename( lstFileName[0] )
             try:
-                global SPL_dfData
+
                 SPL_dfData = pd.read_csv( lstFileName[0], encoding="cp949" )
                 lstColumns = SPL_dfData.columns
                 self.listWidget_Columns.clear()
                 for i, strColumn in enumerate(lstColumns) :
                     self.listWidget_Columns.addItem( strColumn )
 
+                SPL_lstChkData = []  # init
+                self._UpdateCheckBoxAll()
+
             except Exception as e:
                 print( f"error at opening \"{lstFileName[0]}\"")
-                print( e )
+                print(e)
+                _ = QMessageBox.information(self, e)
+
 
 
 
@@ -105,12 +114,12 @@ class MatplotlibWidget(QMainWindow):
         lstColData = [ x0 for x0, x1 in SPL_lstChkData ]
         lstItems = self.listWidget_Columns.selectedItems()
 
-        print( SPL_lstChkData )
+        # print( SPL_lstChkData )
         for ItemElement in lstItems:
             ItemEntity = ItemElement.text()
             if ItemEntity not in lstColData:
                 SPL_lstChkData.append( [ItemEntity, 2] )
-        print( SPL_lstChkData )
+        # print( SPL_lstChkData )
 
         # TableWidget
         self._UpdateCheckBoxAll()
@@ -127,10 +136,10 @@ class MatplotlibWidget(QMainWindow):
         for ItemEntity in lstSelectedItem:
             lstItems.append( ItemEntity.text() )
 
-        print("lstItems", lstItems)
+        #print("lstItems", lstItems)
 
 
-        print( "SPL_lstChkData", SPL_lstChkData )
+        #print( "SPL_lstChkData", SPL_lstChkData )
         lstTemp = lstColData
         for ItemEntity in lstItems:
             if ItemEntity in lstColData:
@@ -143,12 +152,9 @@ class MatplotlibWidget(QMainWindow):
                 lstTemp.remove( [x0, x1] )
         SPL_lstChkData = lstTemp
 
-        print(SPL_lstChkData)
+        #print(SPL_lstChkData)
 
         self._UpdateCheckBoxAll()
-
-
-
 
 
 
@@ -161,14 +167,14 @@ class MatplotlibWidget(QMainWindow):
             # print(ckbox)
             if isinstance(ckbox, QCheckBox):
                 if ckbox.isChecked():
-                    print( lstIdx[0].row(), lstIdx[0].column(), " checked")
+                    # print( lstIdx[0].row(), lstIdx[0].column(), " checked")
                     # global 변수 업데이트
                     SPL_lstChkData[lstIdx[0].row()][1] = lstIdx[0].column()
                 else:
                     # 만일 check  상태에서 클릭한다면
                     if( SPL_lstChkData[lstIdx[0].row()][1] == lstIdx[0].column() ):
                         SPL_lstChkData[lstIdx[0].row()][1] = 0
-                    print( lstIdx[0].row(), lstIdx[0].column(), " no checked")
+                    # print( lstIdx[0].row(), lstIdx[0].column(), " no checked")
 
             else:
                 pass
@@ -200,11 +206,8 @@ class MatplotlibWidget(QMainWindow):
                 ChkBox.stateChanged.connect(self.__checkbox_change)  # sender() 확인용 예..
 
         self.table.horizontalHeaderItem(0).setToolTip("Column Name in CSV") # header tooltip
-
         self.table.resizeColumnsToContents()
         self.table.resizeRowsToContents()
-
-
         self.table.cellClicked.connect(self._cellclicked)
 
         self._UpdateCheckBoxState()
@@ -227,7 +230,8 @@ class MatplotlibWidget(QMainWindow):
 
 
     def _cellclicked(self, row, col):
-        print("_cellclicked... ", row, col)
+        pass
+        #print("_cellclicked... ", row, col)
 
 
 
@@ -302,6 +306,7 @@ class MatplotlibWidget(QMainWindow):
                     self.MplWidget.canvas.draw()
                 except Exception as e:
                     print(e)
+                    _ = QMessageBox.information(self, e)
 
 
 '''
