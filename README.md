@@ -1,4 +1,3 @@
-* notice: progrmming is under working
 
 
 # SimplePlt
