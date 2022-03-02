@@ -275,19 +275,21 @@ class MatplotlibWidget(QMainWindow):
 
                 # Y1축에 그릴 데이터
                 if (len(lstY1Attr) > 0):  # Y1 에 그릴 데이터가 있다면
-                    colorsY1 = cm.gist_rainbow( np.linspace(0, 1, len(lstY1Attr)) )
+                    #colorsY1 = cm.tab20( np.linspace(0, 1, len(SPL_dfData.columns)) )
+                    colorsY1 = cm.rainbow(np.linspace(0, 1, len(SPL_dfData.columns)))
                     for i, Y1Attr in enumerate(lstY1Attr) :
                         y_data = SPL_dfData[Y1Attr].to_numpy( )
-                        self.MplWidget.canvas.axes.plot( x_data, y_data, color=colorsY1[i] )
+                        self.MplWidget.canvas.axes.plot( x_data, y_data, linewidth=0.8, color=colorsY1[i] )
 
                     self.MplWidget.canvas.axes.legend( lstY1Attr, loc='upper left')
 
                 # Y2축에 그릴 데이터
                 if (len(lstY2Attr) > 0):  # Y2 에 그릴 데이터가 있다면
-                    colorsY2 = cm.rainbow( np.linspace(0, 1, len(lstY2Attr)) )
+                    #colorsY2 = cm.Set3( np.linspace(0, 1, len(SPL_dfData.columns)) )
+                    colorsY2 = cm.gist_rainbow(np.linspace(0, 1, len(SPL_dfData.columns)))
                     for i, Y2Attr in enumerate(lstY2Attr) :
                         y2_data = SPL_dfData[Y2Attr].to_numpy( )
-                        self.MplWidget.canvas.axes_2.plot(x_data, y2_data, color=colorsY2[i] )
+                        self.MplWidget.canvas.axes_2.plot(x_data, y2_data, linewidth=0.8, color=colorsY2[i] )
 
                     self.MplWidget.canvas.axes_2.legend( lstY2Attr, loc='upper right')
 
@@ -324,5 +326,4 @@ app = QApplication([])
 window = MatplotlibWidget()
 window.show()
 app.exec_()
-
 
