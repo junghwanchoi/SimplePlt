@@ -48,6 +48,8 @@ class MatplotlibWidget(QMainWindow):
         self.pushButton_Down.setIcon(QIcon('iconDown.png'))
         self.pushButton_Plt.setIcon(QIcon('iconPlot.png'))
 
+        # 현재 위치
+        self.base_path = os.getcwd()
 
         # List Widget
         #  CSV 파일의 column 이름을 표시
@@ -86,12 +88,13 @@ class MatplotlibWidget(QMainWindow):
         global SPL_dfData
         global SPL_lstChkData
 
-        lstFileName = QFileDialog.getOpenFileName( self, "Open file", "./", "CSV (*.csv)")
+        lstFileName = QFileDialog.getOpenFileName( self, "Open file", self.base_path, "CSV (*.csv)")
+
 
         if lstFileName[0]:
+            self.base_path = os.path.dirname(lstFileName[0]) # 파일의 Path를 기억
             SPL_strFileName = os.path.basename( lstFileName[0] )
             try:
-
                 SPL_dfData = pd.read_csv( lstFileName[0], encoding="cp949" )
                 lstColumns = SPL_dfData.columns
                 self.listWidget_Columns.clear()
