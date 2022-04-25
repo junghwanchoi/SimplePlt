@@ -284,15 +284,14 @@ class MatplotlibWidget(QMainWindow):
                     #colorsY1 = cm.rainbow(np.linspace(0, 1, len(SPL_dfData.columns)))
                     for i, Y1Attr in enumerate(lstY1Attr) :
                         y_data = SPL_dfData[Y1Attr].to_numpy( )
-                        self.MplWidget.canvas.axes.plot( x_data, y_data, linewidth=0.8 ) #, color=colorsY1[i%len(colorsY1)] )
+
+                        if Y1Attr in lstSelectedItemText:  # 현재 선택되어 있다면
+                            self.MplWidget.canvas.axes.plot( x_data, y_data, '-o', linewidth=0.8 ) #, color=colorsY1[i%len(colorsY1)] )
+                        else:
+                            self.MplWidget.canvas.axes.plot(x_data, y_data, linewidth=0.8)  # , color=colorsY1[i%len(colorsY1)] )
 
                     self.MplWidget.canvas.axes.legend( lstY1Attr, loc='upper left')
 
-                    # circle 만 다시 그리기. legent 후에
-                    for i, Y1Attr in enumerate(lstY1Attr) :
-                        if Y1Attr in lstSelectedItemText: # 현재 선택되어 있다면
-                            y_data = SPL_dfData[Y1Attr].to_numpy( )
-                            self.MplWidget.canvas.axes.plot( x_data, y_data, 'o' ) #, color=colorsY1[i%len(colorsY1)] )
 
 
                 # Y2축에 그릴 데이터
@@ -302,15 +301,15 @@ class MatplotlibWidget(QMainWindow):
                     colorsY2 = ["red", "orange", "yellow", "green", "blue", "indigo", "violet"]
                     for i, Y2Attr in enumerate(lstY2Attr) :
                         y2_data = SPL_dfData[Y2Attr].to_numpy( )
-                        self.MplWidget.canvas.axes_2.plot(x_data, y2_data, linewidth=0.8, color=colorsY2[i%len(colorsY2)] )
+
+                        if Y2Attr in lstSelectedItemText:  # 현재 선택되어 있다면
+                            self.MplWidget.canvas.axes_2.plot(x_data, y2_data, '-o', linewidth=0.8, color=colorsY2[i%len(colorsY2)] )
+                        else:
+                            self.MplWidget.canvas.axes_2.plot(x_data, y2_data, linewidth=0.8, color=colorsY2[i % len(colorsY2)])
 
                     self.MplWidget.canvas.axes_2.legend( lstY2Attr, loc='upper right')
 
-                    # circle 만 다시 그리기. legent 후에
-                    for i, Y2Attr in enumerate(lstY2Attr) :
-                        if Y2Attr in lstSelectedItemText: # 현재 선택되어 있다면
-                            y2_data = SPL_dfData[Y2Attr].to_numpy()
-                            self.MplWidget.canvas.axes_2.plot(x_data, y2_data, 'o', color=colorsY2[i % len(colorsY2)])
+
 
                 self.MplWidget.canvas.axes.grid(True)
                 self.MplWidget.canvas.axes.set_title( SPL_strFileName )
@@ -345,3 +344,4 @@ app = QApplication([])
 window = MatplotlibWidget()
 window.show()
 app.exec_()
+
