@@ -13,6 +13,7 @@ import numpy as np
 import random
 import pandas as pd
 import os
+import copy
 
 SPL_dfData = pd.DataFrame()
 SPL_lstChkData = [] # ["  signal name  ", 0]
@@ -138,23 +139,13 @@ class MatplotlibWidget(QMainWindow):
 
         for ItemEntity in lstSelectedItem:
             lstItems.append( ItemEntity.text() )
-
         #print("lstItems", lstItems)
 
-
-        #print( "SPL_lstChkData", SPL_lstChkData )
-        lstTemp = lstColData
-        for ItemEntity in lstItems:
-            if ItemEntity in lstColData:
-                lstTemp.remove( ItemEntity )
-        lstColData = lstTemp
-
-        lstTemp = SPL_lstChkData
+        lstTemp = copy.deepcopy( SPL_lstChkData ) # shadow copy시 자신을 지우는 문제 발생
         for x0, x1 in SPL_lstChkData:
-            if x0 not in lstColData:
+            if x0 in lstItems:
                 lstTemp.remove( [x0, x1] )
         SPL_lstChkData = lstTemp
-
         #print(SPL_lstChkData)
 
         self._UpdateCheckBoxAll()
@@ -263,6 +254,13 @@ class MatplotlibWidget(QMainWindow):
             else:
                 pass
 
+        lstSelectedItemText = []
+        lstSelectedItem = self.table.selectedItems()
+
+        for ItemEntity in lstSelectedItem:
+            lstSelectedItemText.append( ItemEntity.text() )
+        #print("lstItems", lstSelectedItemText)
+
 
         if( len(SPL_dfData) > 0): # DataFrame을 읽어 들였다면
 
@@ -283,23 +281,36 @@ class MatplotlibWidget(QMainWindow):
                 # Y1축에 그릴 데이터
                 if (len(lstY1Attr) > 0):  # Y1 에 그릴 데이터가 있다면
                     #colorsY1 = cm.tab20( np.linspace(0, 1, len(SPL_dfData.columns)) )
-                    colorsY1 = cm.rainbow(np.linspace(0, 1, len(SPL_dfData.columns)))
+                    #colorsY1 = cm.rainbow(np.linspace(0, 1, len(SPL_dfData.columns)))
                     for i, Y1Attr in enumerate(lstY1Attr) :
                         y_data = SPL_dfData[Y1Attr].to_numpy( )
-                        self.MplWidget.canvas.axes.plot( x_data, y_data, linewidth=0.8, color=colorsY1[i] )
+                        self.MplWidget.canvas.axes.plot( x_data, y_data, linewidth=0.8 ) #, color=colorsY1[i%len(colorsY1)] )
 
                     self.MplWidget.canvas.axes.legend( lstY1Attr, loc='upper left')
+
+                    # circle 만 다시 그리기. legent 후에
+                    for i, Y1Attr in enumerate(lstY1Attr) :
+                        if Y1Attr in lstSelectedItemText: # 현재 선택되어 있다면
+                            y_data = SPL_dfData[Y1Attr].to_numpy( )
+                            self.MplWidget.canvas.axes.plot( x_data, y_data, 'o' ) #, color=colorsY1[i%len(colorsY1)] )
+
 
                 # Y2축에 그릴 데이터
                 if (len(lstY2Attr) > 0):  # Y2 에 그릴 데이터가 있다면
                     #colorsY2 = cm.Set3( np.linspace(0, 1, len(SPL_dfData.columns)) )
-                    colorsY2 = cm.gist_rainbow(np.linspace(0, 1, len(SPL_dfData.columns)))
+                    #colorsY2 = cm.gist_rainbow(np.linspace(0, 1, len(SPL_dfData.columns)))
+                    colorsY2 = ["red", "orange", "yellow", "green", "blue", "indigo", "violet"]
                     for i, Y2Attr in enumerate(lstY2Attr) :
                         y2_data = SPL_dfData[Y2Attr].to_numpy( )
-                        self.MplWidget.canvas.axes_2.plot(x_data, y2_data, linewidth=0.8, color=colorsY2[i] )
+                        self.MplWidget.canvas.axes_2.plot(x_data, y2_data, linewidth=0.8, color=colorsY2[i%len(colorsY2)] )
 
                     self.MplWidget.canvas.axes_2.legend( lstY2Attr, loc='upper right')
 
+                    # circle 만 다시 그리기. legent 후에
+                    for i, Y2Attr in enumerate(lstY2Attr) :
+                        if Y2Attr in lstSelectedItemText: # 현재 선택되어 있다면
+                            y2_data = SPL_dfData[Y2Attr].to_numpy()
+                            self.MplWidget.canvas.axes_2.plot(x_data, y2_data, 'o', color=colorsY2[i % len(colorsY2)])
 
                 self.MplWidget.canvas.axes.grid(True)
                 self.MplWidget.canvas.axes.set_title( SPL_strFileName )
@@ -334,4 +345,3 @@ app = QApplication([])
 window = MatplotlibWidget()
 window.show()
 app.exec_()
-
