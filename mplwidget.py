@@ -7,7 +7,15 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas
 
 from matplotlib.figure import Figure
 import matplotlib
-    
+
+# 한글 구현
+font_ko = {
+    'family': 'New Gulim'
+}
+font_en = {
+    'family': 'Arial'
+}
+
 class MplWidget(QWidget):
     
     def __init__(self, parent = None):
@@ -22,9 +30,10 @@ class MplWidget(QWidget):
         self.canvas.axes = self.canvas.figure.add_subplot(111)
         self.canvas.axes_2 = self.canvas.axes.twinx()
         self.setLayout(vertical_layout)
+
         # 한글 구현
-        font = {
-            'family': 'New Gulim'
-        }
-        matplotlib.rc( 'font', **font )
+        try:
+            matplotlib.rc( 'font', **font_ko )
+        except:
+            matplotlib.rc( 'font', **font_en )
 
