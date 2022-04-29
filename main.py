@@ -79,7 +79,7 @@ def strptime2Timestamp(lstStrTime):
                         second = int(numbers[5])  # sec
                         if second > 59:
                             second = 59
-                        timestampOne = datetime.datetime(year, month, day, hour, mininute, second)
+                        dateTimeOne = datetime.datetime(year, month, day, hour, mininute, second)
                         lstDateTime.append(dateTimeOne)
                         timestampOne = datetime.datetime.timestamp(dateTimeOne)
                         lstTimeStamp.append(timestampOne)
