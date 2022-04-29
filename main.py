@@ -342,6 +342,7 @@ class MatplotlibWidget(QMainWindow):
                     lstDateTime, lstTimeStamp = strptime2Timestamp( SPL_dfData[XAttr].values.tolist()  )
                     if( len(lstDateTime) == len(SPL_dfData[XAttr]) ): # 같은 사이즈 만큼 변환하였다면
                         x_data = lstDateTime
+                        SPL_dfData[XAttr] = lstDateTime
 
                 else:
                     if (len(lstY1Attr) > 0):  # Y1 에 그릴 데이터가 있다면
@@ -360,6 +361,7 @@ class MatplotlibWidget(QMainWindow):
                         lstDateTime, lstTimeStamp = strptime2Timestamp( SPL_dfData[Y1Attr].values.tolist() )
                         if (len(lstDateTime) == len(SPL_dfData[XAttr])): # 같은 사이즈 만큼 변환하였다면
                             y_data = lstDateTime
+                            SPL_dfData[Y1Attr] = lstDateTime
 
                         if Y1Attr in lstSelectedItemText:  # 현재 선택되어 있다면
                             self.MplWidget.canvas.axes.plot( x_data, y_data, '-o', linewidth=0.8 ) #, color=colorsY1[i%len(colorsY1)] )
@@ -382,6 +384,7 @@ class MatplotlibWidget(QMainWindow):
                         lstDateTime, lstTimeStamp = strptime2Timestamp( SPL_dfData[Y2Attr].values.tolist() )
                         if (len(lstDateTime) == len(SPL_dfData[XAttr])): # 같은 사이즈 만큼 변환하였다면
                             y2_data = lstDateTime
+                            SPL_dfData[Y2Attr] = lstDateTime
 
                         if Y2Attr in lstSelectedItemText:  # 현재 선택되어 있다면
                             self.MplWidget.canvas.axes_2.plot(x_data, y2_data, '-o', linewidth=0.8, color=colorsY2[i%len(colorsY2)] )
