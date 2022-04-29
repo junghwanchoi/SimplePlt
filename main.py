@@ -14,17 +14,84 @@ import random
 import pandas as pd
 import os
 import copy
+import datetime
+import re
 
 SPL_dfData = pd.DataFrame()
 SPL_lstChkData = [] # ["  signal name  ", 0]
 SPL_strFileName = ""
 
 
+# "2022-04-26 11:54:23" -> 1463460958000 (초단위)
+def strptime2Timestamp(lstStrTime):
+    lstDateTime = []  # str -> datetime
+    lstTimeStamp = []  # str -> timestamp
+
+    '''
+    "2022-04-26 11:54:23"
+        0 : 2
+        1 : 0
+        2 : 2
+        3 : 2
+        4 : -
+        5 : 0
+        6 : 4
+        7 : -
+        8 : 2
+        9 : 6
+        10 :  
+        11 : 1
+        12 : 1
+        13 : :
+        14 : 5
+        15 : 4
+        16 : :
+        17 : 2
+        18 : 3
+    '''
+
+    # 특정 포멧을 맞추고 있다면
+    if( str(type(lstStrTime[0]) ) == "<class \'str\'>" ): # str 형이면
+
+        if( len(lstStrTime[0]) > 18 ):
+
+            if (lstStrTime[0][4] == '-') \
+                and (lstStrTime[0][7] == '-') \
+                and (lstStrTime[0][10] == ' ') \
+                and (lstStrTime[0][13] == ':') \
+                and (lstStrTime[0][16] == ':'):
+
+                for strTime in lstStrTime:
+                    try:
+                        # 라이브러리를 이용한 변환
+                        dateTimeOne = datetime.datetime.strptime(strTime, '%Y-%m-%d %H:%M:%S')
+                        lstDateTime.append(dateTimeOne)
+                        timestampOne = datetime.datetime.timestamp(dateTimeOne)
+                        lstTimeStamp.append(timestampOne)
+                    except:  # 변환에 에러 발생시, 수동으로 변환. 범위 오류도 수정
+                        # print( strTime )
+                        numbers = re.findall('\d+', strTime)
+                        year = int(numbers[0])  # year
+                        month = int(numbers[1])  # month
+                        day = int(numbers[2])  # day
+                        hour = int(numbers[3])  # hour
+                        mininute = int(numbers[4])  # min
+                        second = int(numbers[5])  # sec
+                        if second > 59:
+                            second = 59
+                        timestampOne = datetime.datetime(year, month, day, hour, mininute, second)
+                        lstDateTime.append(dateTimeOne)
+                        timestampOne = datetime.datetime.timestamp(dateTimeOne)
+                        lstTimeStamp.append(timestampOne)
+
+
+    return lstDateTime, lstTimeStamp
+
+
+
 
 
 class MatplotlibWidget(QMainWindow):
-
-
 
     def __init__(self):
         
@@ -43,7 +110,7 @@ class MatplotlibWidget(QMainWindow):
         self.pushButton_Up.clicked.connect(self.OnBtnClick_Up)
         self.pushButton_Down.clicked.connect(self.OnBtnClick_Down)
         self.pushButton_Plt.clicked.connect(self.OnBtnClick_Plt)
-		# 버튼 아이콘 표시하기
+        # 버튼 아이콘 표시하기
         self.pushButton_OpenFile.setIcon(QIcon('iconFile.png'))
         self.pushButton_Up.setIcon(QIcon('iconUp.png'))
         self.pushButton_Down.setIcon(QIcon('iconDown.png'))
@@ -228,8 +295,6 @@ class MatplotlibWidget(QMainWindow):
         #print("_cellclicked... ", row, col)
 
 
-
-
     # DataFrame()의 column 이름이 중복일때 수정하기 위해
     def vFixColumnName(self):
         pass
@@ -272,6 +337,12 @@ class MatplotlibWidget(QMainWindow):
                 # X축에 그릴 데이터
                 if( len(XAttr) > 0 ): # X에 그릴 데이터가 있다면
                     x_data = SPL_dfData[XAttr].to_numpy( )
+                    
+                    # 시간으로 변환
+                    lstDateTime, lstTimeStamp = strptime2Timestamp( SPL_dfData[XAttr].values.tolist()  )
+                    if( len(lstDateTime) == len(SPL_dfData[XAttr]) ): # 같은 사이즈 만큼 변환하였다면
+                        x_data = lstDateTime
+
                 else:
                     if (len(lstY1Attr) > 0):  # Y1 에 그릴 데이터가 있다면
                         x_data = np.arange( len( SPL_dfData[lstY1Attr[0]] ) ) # X 를 선택안했을 경우를 대비해서 X 축 데이터 만듦
@@ -284,6 +355,11 @@ class MatplotlibWidget(QMainWindow):
                     #colorsY1 = cm.rainbow(np.linspace(0, 1, len(SPL_dfData.columns)))
                     for i, Y1Attr in enumerate(lstY1Attr) :
                         y_data = SPL_dfData[Y1Attr].to_numpy( )
+
+                        # 시간으로 변환
+                        lstDateTime, lstTimeStamp = strptime2Timestamp( SPL_dfData[Y1Attr].values.tolist() )
+                        if (len(lstDateTime) == len(SPL_dfData[XAttr])): # 같은 사이즈 만큼 변환하였다면
+                            y_data = lstDateTime
 
                         if Y1Attr in lstSelectedItemText:  # 현재 선택되어 있다면
                             self.MplWidget.canvas.axes.plot( x_data, y_data, '-o', linewidth=0.8 ) #, color=colorsY1[i%len(colorsY1)] )
@@ -301,6 +377,11 @@ class MatplotlibWidget(QMainWindow):
                     colorsY2 = ["red", "orange", "yellow", "green", "blue", "indigo", "violet"]
                     for i, Y2Attr in enumerate(lstY2Attr) :
                         y2_data = SPL_dfData[Y2Attr].to_numpy( )
+
+                        # 시간으로 변환
+                        lstDateTime, lstTimeStamp = strptime2Timestamp( SPL_dfData[Y2Attr].values.tolist() )
+                        if (len(lstDateTime) == len(SPL_dfData[XAttr])): # 같은 사이즈 만큼 변환하였다면
+                            y2_data = lstDateTime
 
                         if Y2Attr in lstSelectedItemText:  # 현재 선택되어 있다면
                             self.MplWidget.canvas.axes_2.plot(x_data, y2_data, '-o', linewidth=0.8, color=colorsY2[i%len(colorsY2)] )
@@ -344,4 +425,3 @@ app = QApplication([])
 window = MatplotlibWidget()
 window.show()
 app.exec_()
-
