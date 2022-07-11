@@ -7,7 +7,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import Qt
 
 from matplotlib.backends.backend_qt5agg import (NavigationToolbar2QT as NavigationToolbar)
-from matplotlib import cm
+from matplotlib import cm # colormap
 
 import numpy as np
 import random
@@ -62,6 +62,7 @@ def strptime2Timestamp(lstStrTime):
                 and (lstStrTime[0][16] == ':'):
 
                 for strTime in lstStrTime:
+
                     try:
                         # 라이브러리를 이용한 변환
                         dateTimeOne = datetime.datetime.strptime(strTime, '%Y-%m-%d %H:%M:%S')
@@ -364,9 +365,9 @@ class MatplotlibWidget(QMainWindow):
                             SPL_dfData[Y1Attr] = lstDateTime # 한번 변환한 것은 다시 변환 안하기 위해
 
                         if Y1Attr in lstSelectedItemText:  # 현재 선택되어 있다면
-                            self.MplWidget.canvas.axes.plot( x_data, y_data, '-o', linewidth=0.8 ) #, color=colorsY1[i%len(colorsY1)] )
+                            self.MplWidget.canvas.axes.plot( x_data, y_data, '-o', linewidth=0.8, drawstyle='steps-post' ) #, color=colorsY1[i%len(colorsY1)] )
                         else:
-                            self.MplWidget.canvas.axes.plot(x_data, y_data, linewidth=0.8)  # , color=colorsY1[i%len(colorsY1)] )
+                            self.MplWidget.canvas.axes.plot(x_data, y_data, linewidth=0.8, drawstyle='steps-post' )  # , color=colorsY1[i%len(colorsY1)] )
 
                     self.MplWidget.canvas.axes.legend( lstY1Attr, loc='upper left')
 
@@ -387,9 +388,9 @@ class MatplotlibWidget(QMainWindow):
                             SPL_dfData[Y2Attr] = lstDateTime # 한번 변환한 것은 다시 변환 안하기 위해
 
                         if Y2Attr in lstSelectedItemText:  # 현재 선택되어 있다면
-                            self.MplWidget.canvas.axes_2.plot(x_data, y2_data, '-o', linewidth=0.8, color=colorsY2[i%len(colorsY2)] )
+                            self.MplWidget.canvas.axes_2.plot(x_data, y2_data, '-o', linewidth=0.8, color=colorsY2[i%len(colorsY2)], drawstyle='steps-post' )
                         else:
-                            self.MplWidget.canvas.axes_2.plot(x_data, y2_data, linewidth=0.8, color=colorsY2[i % len(colorsY2)])
+                            self.MplWidget.canvas.axes_2.plot(x_data, y2_data, linewidth=0.8, color=colorsY2[i % len(colorsY2)], drawstyle='steps-post' )
 
                     self.MplWidget.canvas.axes_2.legend( lstY2Attr, loc='upper right')
 
@@ -406,23 +407,6 @@ class MatplotlibWidget(QMainWindow):
                     _ = QMessageBox.information(self, e)
 
 
-'''
-        fs = 500
-        f = random.randint(1, 100)
-        ts = 1 / fs
-        length_of_signal = 100
-        x = np.linspace(0, 1, length_of_signal)
-
-        cosinus_signal = np.cos(2 * np.pi * f * x)
-        sinus_signal = np.sin(2 * np.pi * f * x)
-
-        self.MplWidget.canvas.axes.clear()
-        self.MplWidget.canvas.axes.plot(x, cosinus_signal)
-        self.MplWidget.canvas.axes.plot(x, sinus_signal)
-        self.MplWidget.canvas.axes.legend(('cosinus', 'sinus'), loc='upper right')
-        self.MplWidget.canvas.axes.set_title('Cosinus - Sinus Signal')
-        self.MplWidget.canvas.draw()
-'''
 
 app = QApplication([])
 window = MatplotlibWidget()
