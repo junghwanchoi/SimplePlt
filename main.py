@@ -103,7 +103,29 @@ class MatplotlibWidget(QMainWindow):
         self.setWindowIcon(QIcon('iconPlot.png')) # 맨왼쪽위 아이콘
         self.setWindowTitle("Simple Matplotlib w/ GUI")
 
-        
+        self.MplWidget.canvas.axes = self.MplWidget.canvas.figure.add_subplot(111)
+        self.MplWidget.canvas.axes_2 = self.MplWidget.canvas.axes.twinx()
+
+        # 좌표값
+        # (출처) https://stackoverflow.com/questions/21583965/matplotlib-cursor-value-with-two-axes
+        def make_format(current, other):
+            # current and other are axes
+            def format_coord(x, y):
+                # x, y are data coordinates
+                # convert to display coords
+                display_coord = current.transData.transform((x, y))
+                inv = other.transData.inverted()
+                # convert back to data coords with respect to ax
+                ax_coord = inv.transform(display_coord)
+                coords = [ax_coord, (x, y)]
+                return ('Left: {:<40}    Right: {:<}'.format(*['({:.3f}, {:.3f})'.format(x, y) for x, y in coords]))
+
+            return format_coord
+
+        self.MplWidget.canvas.axes_2.format_coord = make_format(self.MplWidget.canvas.axes_2, self.MplWidget.canvas.axes)
+
+
+
         # 툴바
         self.addToolBar(NavigationToolbar(self.MplWidget.canvas, self))
         # 버튼 signal
@@ -116,6 +138,8 @@ class MatplotlibWidget(QMainWindow):
         self.pushButton_Up.setIcon(QIcon('iconUp.png'))
         self.pushButton_Down.setIcon(QIcon('iconDown.png'))
         self.pushButton_Plt.setIcon(QIcon('iconPlot.png'))
+
+
 
         # 현재 위치
         self.base_path = os.getcwd()
@@ -147,7 +171,10 @@ class MatplotlibWidget(QMainWindow):
         self.table.setColumnWidth(1, 10)
         self.table.setColumnWidth(2, 10)
         self.table.setColumnWidth(3, 10)
-		
+
+
+
+
 
 
     # .csv 파일을 open 했을때 수행하는 일
@@ -329,9 +356,11 @@ class MatplotlibWidget(QMainWindow):
 
 
         if( len(SPL_dfData) > 0): # DataFrame을 읽어 들였다면
-
+            self.MplWidget.canvas.axes.plot(0, 0 ) # dummy plot to clear old data
+            self.MplWidget.canvas.axes_2.plot(0, 0 ) # dummy plot to clear old data
             self.MplWidget.canvas.axes.clear() # 화면을 지움
             self.MplWidget.canvas.axes_2.clear()  # 화면을 지움
+
 
             if( (len(lstY1Attr) > 0) or (len(lstY2Attr) > 0) ): # Y1 에 그릴 데이터가 있다면
 
@@ -355,6 +384,12 @@ class MatplotlibWidget(QMainWindow):
                 if (len(lstY1Attr) > 0):  # Y1 에 그릴 데이터가 있다면
                     #colorsY1 = cm.tab20( np.linspace(0, 1, len(SPL_dfData.columns)) )
                     #colorsY1 = cm.rainbow(np.linspace(0, 1, len(SPL_dfData.columns)))
+                    '''
+                    colorsY1 = ['#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c', '#98df8a', '#d62728', '#ff9896',
+                       '#9467bd', '#c5b0d5', '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f', '#c7c7c7',
+                       '#bcbd22', '#dbdb8d', '#17becf', '#9edae5']
+                    '''
+
                     for i, Y1Attr in enumerate(lstY1Attr) :
                         y_data = SPL_dfData[Y1Attr].to_numpy( )
 
@@ -412,3 +447,5 @@ app = QApplication([])
 window = MatplotlibWidget()
 window.show()
 app.exec_()
+
+
