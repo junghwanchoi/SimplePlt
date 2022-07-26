@@ -26,9 +26,6 @@ class MplWidget(QWidget):
         
         vertical_layout = QVBoxLayout()
         vertical_layout.addWidget(self.canvas)
-        
-        self.canvas.axes = self.canvas.figure.add_subplot(111)
-        self.canvas.axes_2 = self.canvas.axes.twinx()
         self.setLayout(vertical_layout)
 
         # 한글 구현
@@ -37,3 +34,4 @@ class MplWidget(QWidget):
         except:
             matplotlib.rc( 'font', **font_en )
 
+            
