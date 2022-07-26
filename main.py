@@ -356,8 +356,6 @@ class MatplotlibWidget(QMainWindow):
 
 
         if( len(SPL_dfData) > 0): # DataFrame을 읽어 들였다면
-            self.MplWidget.canvas.axes.plot(0, 0 ) # dummy plot to clear old data
-            self.MplWidget.canvas.axes_2.plot(0, 0 ) # dummy plot to clear old data
             self.MplWidget.canvas.axes.clear() # 화면을 지움
             self.MplWidget.canvas.axes_2.clear()  # 화면을 지움
 
@@ -429,6 +427,17 @@ class MatplotlibWidget(QMainWindow):
 
                     self.MplWidget.canvas.axes_2.legend( lstY2Attr, loc='upper right')
 
+                    self.MplWidget.canvas.axes_2.get_yaxis().set_visible(True)
+
+                else:
+                    # Y2축 데이터가 없다면, Y2축 X 데이터가 없어서 Range 오류 발생
+                    width = max(x_data) - min(x_data)
+                    self.MplWidget.canvas.axes.set_xlim(min(x_data)-width/20, max(x_data)+width/20)
+                    self.MplWidget.canvas.axes_2.set_xlim(min(x_data)-width/20, max(x_data)+width/20)
+                    # 데이터 없으면 우측 Y2 숨기기
+                    self.MplWidget.canvas.axes_2.get_yaxis().set_visible(False) 
+
+
 
 
                 self.MplWidget.canvas.axes.grid(True)
@@ -447,5 +456,4 @@ app = QApplication([])
 window = MatplotlibWidget()
 window.show()
 app.exec_()
-
 
