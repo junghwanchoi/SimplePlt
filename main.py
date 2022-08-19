@@ -1,9 +1,9 @@
 # ------------------------------------------------------
 # ---------------------- main.py -----------------------
 # ------------------------------------------------------
-from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import (QApplication, QInputDialog, QMainWindow, QMessageBox, QFileDialog, QTableWidgetItem, QCheckBox)
 from PyQt5.uic import loadUi
-from PyQt5.QtGui import *
+from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
 
 from matplotlib.backends.backend_qt5agg import (NavigationToolbar2QT as NavigationToolbar)
@@ -94,8 +94,6 @@ def strptime2Timestamp(lstStrTime):
 # Diaglog 창의 이름을  "Y1 axis customize", "Y2 axis customize" 으로 바꾸기 위해
 #
 
-
-'''
 import matplotlib.backends.qt_editor.figureoptions as figureoptions
 
 edit_parameters = NavigationToolbar.edit_parameters # 이전값 저장
@@ -110,13 +108,28 @@ def my_edit_parameters(self):
     axes = self.canvas.figure.get_axes()
     if not axes:
         QMessageBox.warning(
-            self.parent, "Error", "There are no axes to edit.")
+            self, "Error", "There are no axes to edit.")
         return
     elif len(axes) == 1:
         ax, = axes
     else:
+        ''' org code below
+        
+        titles = [
+            ax.get_label() or
+            ax.get_title() or
+            " - ".join(filter(None, [ax.get_xlabel(), ax.get_ylabel()])) or
+            f"<anonymous {type(ax).__name__}>"
+            for ax in axes]
+        duplicate_titles = [
+            title for title in titles if titles.count(title) > 1]
+        for i, ax in enumerate(axes):
+            if titles[i] in duplicate_titles:
+                titles[i] += f" (id: {id(ax):#x})"  # Deduplicate titles.
+        '''
         titles = [ "Y1 axis customize", "Y2 axis customize" ]
-        item, ok = QInputDialog.getItem( self.parent, 'Customize', 'Select axes:', titles, 0, False )
+        item, ok = QInputDialog.getItem(
+            self, 'Customize', 'Select axes:', titles, 0, False)
         if not ok:
             return
         ax = axes[titles.index(item)]
@@ -131,7 +144,7 @@ def my_edit_parameters(self):
 
 NavigationToolbar.edit_parameters = my_edit_parameters # 새로운 함수로 대체
 
-'''
+
 
 
 
