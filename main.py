@@ -90,6 +90,50 @@ def strptime2Timestamp(lstStrTime):
 
 
 
+#
+# Diaglog 창의 이름을  "Y1 axis customize", "Y2 axis customize" 으로 바꾸기 위해
+#
+
+
+'''
+import matplotlib.backends.qt_editor.figureoptions as figureoptions
+
+edit_parameters = NavigationToolbar.edit_parameters # 이전값 저장
+
+def my_edit_parameters(self):
+    # PreHook Here!
+    # print( "PreHook" )
+    #
+    #
+    #
+
+    axes = self.canvas.figure.get_axes()
+    if not axes:
+        QMessageBox.warning(
+            self.parent, "Error", "There are no axes to edit.")
+        return
+    elif len(axes) == 1:
+        ax, = axes
+    else:
+        titles = [ "Y1 axis customize", "Y2 axis customize" ]
+        item, ok = QInputDialog.getItem( self.parent, 'Customize', 'Select axes:', titles, 0, False )
+        if not ok:
+            return
+        ax = axes[titles.index(item)]
+    figureoptions.figure_edit(ax, self)
+
+
+    # PostHook Here!
+    # print( "PostHook" )
+    #
+    #
+    #
+
+NavigationToolbar.edit_parameters = my_edit_parameters # 새로운 함수로 대체
+
+'''
+
+
 
 
 class MatplotlibWidget(QMainWindow):
@@ -184,14 +228,59 @@ class MatplotlibWidget(QMainWindow):
         global SPL_dfData
         global SPL_lstChkData
 
-        lstFileName = QFileDialog.getOpenFileName( self, "Open file", self.base_path, "CSV (*.csv)")
+		#
+        # list형태로 쌓은 pd.DataFrame()을 시간 순서로 합쳐서 pd.DataFrame() 형으로 return
+		#
+        def dfMergeEachLog(lstDataFrame):
 
+            dfMerge = pd.DataFrame()
+            for Idx, DataFrame in enumerate(lstDataFrame):
+                input_df = lstDataFrame[Idx]
+                dfMerge = pd.concat([dfMerge, input_df], axis=0, ignore_index=True)
 
-        if lstFileName[0]:
+            return dfMerge
+
+        # 지정된 경로에 파일을 찾아, read_csv() 후 DataFrame 형을 list로 누적함
+        def lstGetDataFrame(lstFiles):
+
+            lstDataFrame = []
+
+            for filename in lstFiles:
+
+                # 파일이름 정의
+                strFileName = os.path.basename(filename)  # 파일이름만
+
+                df = pd.DataFrame()
+                try:
+                    print("{}".format(strFileName))
+                    df = pd.read_csv(filename, encoding="cp949")  # *.csv 파일 열기
+                except Exception as e:
+                    try:
+                        df = pd.read_csv(filename, encoding='utf-8')  # *.csv 파일 열기
+                    except:
+                        print("Error pd.read_csv( )")
+                        print(e)
+
+                dfData = pd.DataFrame.copy(df[:])  # hard copy
+                # dfData.loc[0] = strFileName
+
+                # pd.DataFrame() 의 list 에 저장함
+                lstDataFrame.append(dfData)
+
+            return lstDataFrame
+
+        tupFileName = QFileDialog.getOpenFileNames( self, "Open file", self.base_path, "CSV (*.csv)")
+        lstFileName = tupFileName[0]
+        lstFileName.sort()
+
+        if len( lstFileName ) > 0:
+		
             self.base_path = os.path.dirname(lstFileName[0]) # 파일의 Path를 기억
             SPL_strFileName = os.path.basename( lstFileName[0] )
+
             try:
-                SPL_dfData = pd.read_csv( lstFileName[0], encoding="cp949" )
+                lstDataFrame = lstGetDataFrame(lstFileName)
+                SPL_dfData = dfMergeEachLog(lstDataFrame)
                 lstColumns = SPL_dfData.columns
                 self.listWidget_Columns.clear()
                 for i, strColumn in enumerate(lstColumns) :
@@ -356,8 +445,29 @@ class MatplotlibWidget(QMainWindow):
 
 
         if( len(SPL_dfData) > 0): # DataFrame을 읽어 들였다면
-            self.MplWidget.canvas.axes.clear() # 화면을 지움
-            self.MplWidget.canvas.axes_2.clear()  # 화면을 지움
+
+            # 백업을 위한 이전 축 설정 GET, 저장
+            #ax1_xmin, ax1_xmax = self.MplWidget.canvas.axes.get_xlim() 
+            #ax1_ymin, ax1_ymax = self.MplWidget.canvas.axes.get_ylim()
+            ax1_xlabel = self.MplWidget.canvas.axes.get_xlabel()
+            ax1_ylabel = self.MplWidget.canvas.axes.get_ylabel()
+            ax2_xlabel = self.MplWidget.canvas.axes_2.get_xlabel()
+            ax2_ylabel = self.MplWidget.canvas.axes_2.get_ylabel()
+
+            # 화면 지우기
+            self.MplWidget.canvas.axes.clear( ) # 화면을 지움
+            self.MplWidget.canvas.axes_2.clear( )  # 화면을 지움
+
+            # 백업을 위한 이전 축 설정 SET
+            if '' != ax1_xlabel:
+                self.MplWidget.canvas.axes.set_xlabel(ax1_xlabel)
+            if '' != ax1_ylabel:
+                self.MplWidget.canvas.axes.set_ylabel(ax1_ylabel)
+            if '' != ax2_xlabel:
+                self.MplWidget.canvas.axes_2.set_xlabel(ax2_xlabel)
+            if '' != ax2_ylabel:
+                self.MplWidget.canvas.axes_2.set_ylabel(ax2_ylabel)
+
 
 
             if( (len(lstY1Attr) > 0) or (len(lstY2Attr) > 0) ): # Y1 에 그릴 데이터가 있다면
@@ -397,10 +507,12 @@ class MatplotlibWidget(QMainWindow):
                             y_data = lstDateTime
                             SPL_dfData[Y1Attr] = lstDateTime # 한번 변환한 것은 다시 변환 안하기 위해
 
+
                         if Y1Attr in lstSelectedItemText:  # 현재 선택되어 있다면
-                            self.MplWidget.canvas.axes.plot( x_data, y_data, '-o', linewidth=0.8, drawstyle='steps-post' ) #, color=colorsY1[i%len(colorsY1)] )
+                            line, = self.MplWidget.canvas.axes.plot( x_data, y_data, '-o', linewidth=0.8) #, drawstyle='steps-post' ) #, color=colorsY1[i%len(colorsY1)] )
                         else:
-                            self.MplWidget.canvas.axes.plot(x_data, y_data, linewidth=0.8, drawstyle='steps-post' )  # , color=colorsY1[i%len(colorsY1)] )
+                            line, = self.MplWidget.canvas.axes.plot(x_data, y_data, linewidth=0.8 ) #, drawstyle='steps-post' )  # , color=colorsY1[i%len(colorsY1)] )
+                        line.set_label( Y1Attr ) # 'Figure Options' 창에서 Curve이름 표시하기 위해
 
                     self.MplWidget.canvas.axes.legend( lstY1Attr, loc='upper left')
 
@@ -421,13 +533,13 @@ class MatplotlibWidget(QMainWindow):
                             SPL_dfData[Y2Attr] = lstDateTime # 한번 변환한 것은 다시 변환 안하기 위해
 
                         if Y2Attr in lstSelectedItemText:  # 현재 선택되어 있다면
-                            self.MplWidget.canvas.axes_2.plot(x_data, y2_data, '-o', linewidth=0.8, color=colorsY2[i%len(colorsY2)], drawstyle='steps-post' )
+                            line, = self.MplWidget.canvas.axes_2.plot(x_data, y2_data, '-o', linewidth=0.8, color=colorsY2[i%len(colorsY2)] )#, drawstyle='steps-post' )
                         else:
-                            self.MplWidget.canvas.axes_2.plot(x_data, y2_data, linewidth=0.8, color=colorsY2[i % len(colorsY2)], drawstyle='steps-post' )
-
+                            line, = self.MplWidget.canvas.axes_2.plot(x_data, y2_data, linewidth=0.8, color=colorsY2[i % len(colorsY2)] ) #, drawstyle='steps-post' )
+                        line.set_label(Y2Attr)  # 'Figure Options' 창에서 Curve이름 표시하기 위해
+                        
                     self.MplWidget.canvas.axes_2.legend( lstY2Attr, loc='upper right')
-
-                    self.MplWidget.canvas.axes_2.get_yaxis().set_visible(True)
+                    self.MplWidget.canvas.axes_2.get_yaxis().set_visible(True) # 데이터가 있으면 Y2 축 보이기
 
                 else:
                     # Y2축 데이터가 없다면, Y2축 X 데이터가 없어서 Range 오류 발생
@@ -435,7 +547,7 @@ class MatplotlibWidget(QMainWindow):
                     self.MplWidget.canvas.axes.set_xlim(min(x_data)-width/20, max(x_data)+width/20)
                     self.MplWidget.canvas.axes_2.set_xlim(min(x_data)-width/20, max(x_data)+width/20)
                     # 데이터 없으면 우측 Y2 숨기기
-                    self.MplWidget.canvas.axes_2.get_yaxis().set_visible(False) 
+                    self.MplWidget.canvas.axes_2.get_yaxis().set_visible(False)  # 데이터가 없으면 Y2 축 숨기기
 
 
 
@@ -456,4 +568,20 @@ app = QApplication([])
 window = MatplotlibWidget()
 window.show()
 app.exec_()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
