@@ -85,7 +85,7 @@
             </property>
             <property name="sizeHint" stdset="0">
              <size>
-              <width>20</width>
+              <width>30</width>
               <height>20</height>
              </size>
             </property>
@@ -169,7 +169,7 @@
             </property>
             <property name="sizeHint" stdset="0">
              <size>
-              <width>20</width>
+              <width>30</width>
               <height>20</height>
              </size>
             </property>
@@ -178,7 +178,11 @@
          </layout>
         </item>
         <item>
-         <widget class="QTableWidget" name="table"/>
+         <widget class="QTableWidget" name="table">
+          <attribute name="horizontalHeaderDefaultSectionSize">
+           <number>100</number>
+          </attribute>
+         </widget>
         </item>
        </layout>
       </item>
