@@ -29,7 +29,6 @@ CFG_Makersize_Unselected = 1
 CFG_Alpha_Unselected = 0.3
 
 
-
 # Global variables
 SPL_dfData = pd.DataFrame()
 #                          신호명         체크되는열(신호당 1개의 체크박스만 클릭가능함)
@@ -636,10 +635,25 @@ class MatplotlibWidget(QMainWindow):
 
 
 
-                # ------------------------------------------------------
-                # Y1, Y2축에 그릴 데이터
-                # ------------------------------------------------------
 
+                #                                  먼저그림          legend           나머지그림
+                # -----------------------------------------------------------------------------------------------------------
+                # 'L' 체크 되었을때
+                #   legend 표시가 30개 이상 일때
+                #     선택된게 있을 때             : 1st 선택된 Ys    many "signal"    나머지 그림
+                #     선택된게 없을 때             : 1st Y로         many "signal"    나머지 그림
+                #   legend 표시가 30개 이내 일때
+                #     선택된게 있을 때             : 1st Y로          legend           나머지 그림
+                #     선택된게 없을 때             : 1st Y로          legend           나머지 그림
+                # 'L' 체크 안 되었을때
+                #   Y축 표시가 30개 이상 일때
+                #     선택된게 있을 때             : 선택된 Ys        legend           나머지 그림
+                #     선택된게 없을 때             : max5, min5      legend           나머지 그림
+                #   Y축 표시가 30개 이내 일때
+                #     선택된게 있을 때             : 모든 Ys          legend
+                #     선택된게 없을 때             : 모든 Ys          legend
+                
+                
                 # 색의 출처 : https://matplotlib.org/stable/users/prev_whats_new/dflt_style_changes.html
                 colorsY1 = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'
                           , '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
@@ -658,26 +672,9 @@ class MatplotlibWidget(QMainWindow):
 
                     if (len(lstYAttr) > 0):  # Y1 에 그릴 데이터가 있다면
 
-                        #                                  먼저그림          legend           나머지그림
-                        # -----------------------------------------------------------------------------------------------------------
-                        # 'L' 체크 되었을때
-                        #   legend 표시가 30개 이상 일때
-                        #     선택된게 있을 때             : 1st 선택된 Ys    many "signal"    나머지 그림
-                        #     선택된게 없을 때             : 1st Y로         many "signal"    나머지 그림
-                        #   legend 표시가 30개 이내 일때
-                        #     선택된게 있을 때             : 1st Y로          legend           나머지 그림
-                        #     선택된게 없을 때             : 1st Y로          legend           나머지 그림
-                        # 'L' 체크 안 되었을때
-                        #   Y축 표시가 30개 이상 일때
-                        #     선택된게 있을 때             : 선택된 Ys        legend           나머지 그림
-                        #     선택된게 없을 때             : max5, min5      legend           나머지 그림
-                        #   Y축 표시가 30개 이내 일때
-                        #     선택된게 있을 때             : 모든 Ys          legend
-                        #     선택된게 없을 때             : 모든 Ys          legend
-
-                        # ------------------------------------------------------
-                        # legend 표시용 그래프 그리기, 먼저 그리는 데이터
-                        # ------------------------------------------------------
+                        # ---------------------------------------------------------------
+                        # legend 표시용 그래프 그리기, 먼저 그리는 데이터 찾기
+                        # ---------------------------------------------------------------
                         lstLegendY = []  # Y1 legend 표시 데이터 이름들
                         lstLegendDrawDataPos = []  # Y1 legend 표시 데이터들의 위치 정보
                         lstLegend_oneY_unique = []  # Y1 legend 중복 없이.
@@ -747,7 +744,9 @@ class MatplotlibWidget(QMainWindow):
 
 
 
-
+                        # ------------------------------------------------------
+                        # Y 축 그리기
+                        # ------------------------------------------------------
 
                         for i, YAttr in enumerate(lstYAttr):
                             y_data = SPL_dfData[YAttr].to_numpy()
@@ -1045,6 +1044,8 @@ class MatplotlibWidget(QMainWindow):
                         for Y1Attr in lstY1Attr:
                             # 공통인 문잘열을 찾음
                             strLabel = max(get_str_array(Y1Attr) & get_str_array(strLabel), key=len)
+                            if( len(strLabel) == 0):
+                                break
                         self.MplWidget.canvas.axes.set_ylabel(strLabel)
 
                 if (len(lstY2Attr) > 0):  # Y1에 그릴 데이터가 있다면
@@ -1055,6 +1056,8 @@ class MatplotlibWidget(QMainWindow):
                         for Y2Attr in lstY2Attr:
                             # 공통인 문잘열을 찾음
                             strLabel = max(get_str_array(Y2Attr) & get_str_array(strLabel), key=len)
+                            if( len(strLabel) == 0):
+                                break
                         self.MplWidget.canvas.axes_2.set_ylabel(strLabel)
 
 
