@@ -1091,6 +1091,8 @@ class MatplotlibWidget(QMainWindow):
                             lstColIndex.append( lstColumn.index(YAttr) )
                         for YAttr in lstY2Attr:
                             lstColIndex.append( lstColumn.index(YAttr) )
+                        lstColIndex.append( min(lstColIndex)-0.5 )
+                        lstColIndex.append( max(lstColIndex)+0.5 )
                         x_data = lstColIndex
 
                     x_max = max(x_data)
