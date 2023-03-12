@@ -767,6 +767,7 @@ class MatplotlibWidget(QMainWindow):
 
                             # -------------------------------------------------------------------------------------
 
+                            # 셀별로 값 확인하기 위해
                             if( XAttr == "column_index" ):
                                 lstColumn = SPL_dfData.columns.to_list()
                                 x_data = [ (lstColumn.index(YAttr)+random.random()*0.8-0.4) for x in range( len(x_data) ) ]
@@ -947,6 +948,8 @@ class MatplotlibWidget(QMainWindow):
 
                             for i, YAttr in enumerate(lstYAttr):
                                 if YAttr not in lstY_for_legend:
+
+                                    # 셀별로 값 확인하기 위해서
                                     if (XAttr == "column_index"):
                                         lstColumn = SPL_dfData.columns.to_list()
                                         x_data = [(lstColumn.index(YAttr)+random.random()*0.8-0.4) for x in range(len(x_data))]
@@ -1000,9 +1003,10 @@ class MatplotlibWidget(QMainWindow):
                             for i, YAttr in enumerate(lstYAttr):
                                 if YAttr not in lstY_for_legend:
 
+                                    # 셀별로 값 확인하기 위해
                                     if (XAttr == "column_index"):
                                         lstColumn = SPL_dfData.columns.to_list()
-                                        x_data = [lstColumn.index(YAttr) for x in range(len(x_data))]
+                                        x_data = [ (lstColumn.index(YAttr)+random.random()*0.8-0.4) for x in range(len(x_data))]
 
                                     y_data = SPL_dfData[YAttr].to_numpy()
 
@@ -1091,7 +1095,7 @@ class MatplotlibWidget(QMainWindow):
                 try:
                     self.MplWidget.canvas.axes.autoscale_view()
 
-
+                    # 셀별로 값 확인하기 위해서
                     if (XAttr == "column_index"):
                         lstColumn = SPL_dfData.columns.to_list()
                         lstColIndex = []
