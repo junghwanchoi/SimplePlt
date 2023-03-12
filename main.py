@@ -17,7 +17,7 @@ import os
 import copy
 import datetime
 import re
-
+import random
 
 
 
@@ -205,6 +205,7 @@ def get_str_array(s):
 
 class MatplotlibWidget(QMainWindow):
 
+
     def __init__(self):
         
         QMainWindow.__init__(self)
@@ -304,7 +305,6 @@ class MatplotlibWidget(QMainWindow):
 
 
 
-
     # .csv 파일을 open 했을때 수행하는 일
     def OnBtnClick_OpenFile(self):
 
@@ -345,9 +345,9 @@ class MatplotlibWidget(QMainWindow):
                         print("Error pd.read_csv( )")
                         print(e)
 
+                df["column_index"] = 0 # default 값, Y 그릴때 생성
                 df["filename"] = strFileName  # 파일이름 생성
                 df["file_sequence"] = df.index  # Sequnce를 생성
-
                 dfData = pd.DataFrame.copy(df[:])  # hard copy
                 # dfData.loc[0] = strFileName
 
@@ -633,9 +633,6 @@ class MatplotlibWidget(QMainWindow):
 
 
 
-
-
-
                 #                                  먼저그림          legend           나머지그림
                 # -----------------------------------------------------------------------------------------------------------
                 # 'L' 체크 되었을때
@@ -767,7 +764,13 @@ class MatplotlibWidget(QMainWindow):
                                 lstDateTime = Timestamp2DateTime(SPL_dfData[YAttr].values.tolist())
                                 y_data = lstDateTime
                                 SPL_dfData[YAttr] = lstDateTime  # 한번 변환한 것은 다시 변환 안하기 위해
+
                             # -------------------------------------------------------------------------------------
+
+                            if( XAttr == "column_index" ):
+                                lstColumn = SPL_dfData.columns.to_list()
+                                x_data = [ (lstColumn.index(YAttr)+random.random()*0.8-0.4) for x in range( len(x_data) ) ]
+
 
                             # lstLegend에는 신호이름이 저장됨
                             # lstLegendY 에는 신호이름의 값이 저장됨
@@ -940,8 +943,14 @@ class MatplotlibWidget(QMainWindow):
                         # ------------------------------------------------------
                         if (len(lstLegend) > 0):  # 'L' 에 체크가 되었다면
 
+
+
                             for i, YAttr in enumerate(lstYAttr):
                                 if YAttr not in lstY_for_legend:
+                                    if (XAttr == "column_index"):
+                                        lstColumn = SPL_dfData.columns.to_list()
+                                        x_data = [(lstColumn.index(YAttr)+random.random()*0.8-0.4) for x in range(len(x_data))]
+
                                     y_data = SPL_dfData[YAttr].to_numpy()
 
                                     if (len(lstLegend_oneY_unique) > CFG_Legend_Max):
@@ -990,6 +999,11 @@ class MatplotlibWidget(QMainWindow):
                         else:
                             for i, YAttr in enumerate(lstYAttr):
                                 if YAttr not in lstY_for_legend:
+
+                                    if (XAttr == "column_index"):
+                                        lstColumn = SPL_dfData.columns.to_list()
+                                        x_data = [lstColumn.index(YAttr) for x in range(len(x_data))]
+
                                     y_data = SPL_dfData[YAttr].to_numpy()
 
                                     if YAttr in lstSelectedItemText:  # 현재 선택되어 있다면
@@ -1076,6 +1090,16 @@ class MatplotlibWidget(QMainWindow):
                 # X 축 신호가 바뀌면, 오류가 나는 경우 있음
                 try:
                     self.MplWidget.canvas.axes.autoscale_view()
+
+
+                    if (XAttr == "column_index"):
+                        lstColumn = SPL_dfData.columns.to_list()
+                        lstColIndex = []
+                        for YAttr in lstY1Attr:
+                            lstColIndex.append( lstColumn.index(YAttr) )
+                        for YAttr in lstY2Attr:
+                            lstColIndex.append( lstColumn.index(YAttr) )
+                        x_data = lstColIndex
 
                     x_max = max(x_data)
                     x_min = min(x_data)
