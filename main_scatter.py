@@ -8,8 +8,9 @@ from PyQt5.QtGui import QIcon
 
 from matplotlib.backends.backend_qt5agg import (NavigationToolbar2QT as NavigationToolbar)
 import matplotlib.backends.qt_editor.figureoptions as figureoptions
-from matplotlib import cm # colormap
+# from matplotlib import cm # colormap
 import matplotlib.dates as mdates
+from matplotlib.artist import Artist
 
 import numpy as np
 import pandas as pd
@@ -23,10 +24,12 @@ import random
 
 # Configuration for SimplePlt
 CFG_Legend_Max = 30
+CFG_Legend_MaxMax = 200
 CFG_Makersize_Selected = 20
 CFG_Alpha_Selected = 0.8
 CFG_Makersize_Unselected = 1
 CFG_Alpha_Unselected = 0.3
+
 
 
 # Global variables
@@ -205,7 +208,6 @@ def get_str_array(s):
 
 class MatplotlibWidget(QMainWindow):
 
-
     def __init__(self):
         
         QMainWindow.__init__(self)
@@ -215,14 +217,20 @@ class MatplotlibWidget(QMainWindow):
         self.setWindowIcon(QIcon('iconPlot.png')) # 맨왼쪽위 아이콘
         self.setWindowTitle("Simple Matplotlib Scatter w/ GUI")
 
-        self.MplWidget.canvas.axes = self.MplWidget.canvas.figure.add_subplot(111)
-        self.MplWidget.canvas.axes_2 = self.MplWidget.canvas.axes.twinx()
+        self.MplWidget.canvas.axes_1 = self.MplWidget.canvas.figure.add_subplot(111)
+        self.MplWidget.canvas.axes_2 = self.MplWidget.canvas.axes_1.twinx()
+
+        # z-order 변경
+        # https://stackoverflow.com/questions/61886791/matplotlib-picker-not-working-with-a-plot-which-has-twiny
+        self.MplWidget.canvas.axes_1.set_zorder(self.MplWidget.canvas.axes_2.get_zorder() + 1)
+        self.MplWidget.canvas.axes_1.set_frame_on(False)
+
 
 
         # x축 지점이 날짜면 제대로 파싱하기 위해 형을 저장. 
         self.xdata_type = type(0.0) # default로 float로 저장
 
-        
+
         # 좌표값
         # (출처) https://stackoverflow.com/questions/21583965/matplotlib-cursor-value-with-two-axes
         def make_format(current, other):
@@ -243,31 +251,39 @@ class MatplotlibWidget(QMainWindow):
                 #                    "2100-01-01 00:00:00"는 47482.000 로 표시됨
                 if( (self.xdata_type==type(datetime.datetime.now()) ) or (self.xdata_type==type(np.datetime64('2023-03-09'))) ):
                     str_x = mdates.num2date(x).strftime('%Y-%m-%d %H:%M:%S')
-                    strRet = ('Left: {:<40}    Right: {:<}'.format(*['({}, {:.3f})'.format(str_x, y) for x, y in coords]))
+                    strRet = ('Left: {1:<40}    Right: {0:<}'.format(*['({}, {:.3f})'.format(str_x, y) for x, y in coords]))
                 else:
-                    strRet = ('Left: {:<40}    Right: {:<}'.format(*['({:.3f}, {:.3f})'.format(x, y) for x, y in coords]))
+                    strRet = ('Left: {1:<40}    Right: {0:<}'.format(*['({:.3f}, {:.3f})'.format(x, y) for x, y in coords]))
 
                 return strRet
 
             return format_coord
 
-        self.MplWidget.canvas.axes_2.format_coord = make_format(self.MplWidget.canvas.axes_2, self.MplWidget.canvas.axes)
-
+        self.MplWidget.canvas.axes_1.format_coord = make_format(self.MplWidget.canvas.axes_1,
+                                                                self.MplWidget.canvas.axes_2) # y2이 z-oreder가 높을때
 
 
         # 툴바
         self.addToolBar(NavigationToolbar(self.MplWidget.canvas, self))
+
         # 버튼 signal
         self.pushButton_OpenFile.clicked.connect(self.OnBtnClick_OpenFile)
         self.pushButton_Up.clicked.connect(self.OnBtnClick_Up)
         self.pushButton_Down.clicked.connect(self.OnBtnClick_Down)
         self.pushButton_Plt.clicked.connect(self.OnBtnClick_Plt)
+
         # 버튼 아이콘 표시하기
         self.pushButton_OpenFile.setIcon(QIcon('iconFile.png'))
         self.pushButton_Up.setIcon(QIcon('iconUp.png'))
         self.pushButton_Down.setIcon(QIcon('iconDown.png'))
         self.pushButton_Plt.setIcon(QIcon('iconPlot.png'))
 
+        # Canvas event handlers
+        self.MplWidget.canvas.mpl_connect('button_release_event', self.onMplMouseUp)
+        self.MplWidget.canvas.mpl_connect('button_press_event', self.onMplMouseDown)
+        self.MplWidget.canvas.mpl_connect('motion_notify_event', self.onMplMouseMotion)
+        self.MplWidget.canvas.mpl_connect('pick_event', self.onMplPick)
+        self.MplWidget.canvas.mpl_connect('scroll_event', self.onMplWheel)
 
 
         # 현재 위치
@@ -302,7 +318,13 @@ class MatplotlibWidget(QMainWindow):
         self.table.setColumnWidth(3, 10)
         self.table.setColumnWidth(4, 10)
 
-
+        # 클래스 내 사용하는 변수
+        self.lstY1Line = []
+        self.lstY2Line = []
+        self.dicY1LineToLegend = {}
+        self.dicY2LineToLegend = {}
+        self.last_artist = None
+        self.lstAnnotation = []
 
 
     # .csv 파일을 open 했을때 수행하는 일
@@ -345,7 +367,7 @@ class MatplotlibWidget(QMainWindow):
                         print("Error pd.read_csv( )")
                         print(e)
 
-                df["column_index"] = 0 # default 값, Y 그릴때 생성
+                df["column_index"] = 0 # default 값, Y 그릴때 생성되는 값
                 df["filename"] = strFileName  # 파일이름 생성
                 df["file_sequence"] = df.index  # Sequnce를 생성
                 dfData = pd.DataFrame.copy(df[:])  # hard copy
@@ -537,7 +559,8 @@ class MatplotlibWidget(QMainWindow):
         XAttr = []
         lstY1Attr = []
         lstY2Attr = []
-        lstLegend = []
+        lstLegAttr = []
+
 
         # 각축별로 뭘 그려야 하는지
         for x0, x1 in SPL_lstChkData:
@@ -548,8 +571,8 @@ class MatplotlibWidget(QMainWindow):
                 lstY1Attr.append( x0 )
             elif( x1 == 3 ): # y2 axis
                 lstY2Attr.append( x0 )
-            elif( x1 == 4 ): # y2 axis
-                lstLegend.append( x0 )
+            elif( x1 == 4 ): # 'L' column
+                lstLegAttr.append( x0 )
             else:
                 pass
 
@@ -564,25 +587,31 @@ class MatplotlibWidget(QMainWindow):
         if( len(SPL_dfData) > 0): # DataFrame을 읽어 들였다면
 
             # 백업을 위한 이전 축 설정 GET, 저장
-            #ax1_xmin, ax1_xmax = self.MplWidget.canvas.axes.get_xlim() 
-            #ax1_ymin, ax1_ymax = self.MplWidget.canvas.axes.get_ylim()
+            #ax1_xmin, ax1_xmax = self.MplWidget.canvas.axes_1.get_xlim()
+            #ax1_ymin, ax1_ymax = self.MplWidget.canvas.axes_1.get_ylim()
 
-            ax1_xlabel = self.MplWidget.canvas.axes.get_xlabel()
-            ax1_ylabel = self.MplWidget.canvas.axes.get_ylabel()
+            ax1_xlabel = self.MplWidget.canvas.axes_1.get_xlabel()
+            ax1_ylabel = self.MplWidget.canvas.axes_1.get_ylabel()
 
             ax2_xlabel = self.MplWidget.canvas.axes_2.get_xlabel()
             ax2_ylabel = self.MplWidget.canvas.axes_2.get_ylabel()
 
 
             # 화면 지우기
-            self.MplWidget.canvas.axes.clear( ) # 화면을 지움
+            self.MplWidget.canvas.axes_1.clear( ) # 화면을 지움
             self.MplWidget.canvas.axes_2.clear( )  # 화면을 지움
+            
+            # 클래스내 global 변수 초기화
+            self.lstY1Line = []  # init
+            self.lstY2Line = []  # init
+            self.dicY1LineToLegend = {}  # init
+            self.dicY2LineToLegend = {}  # init
 
             # 백업을 위한 이전 축 설정 SET
             if '' != ax1_xlabel:
-                self.MplWidget.canvas.axes.set_xlabel(ax1_xlabel)
+                self.MplWidget.canvas.axes_1.set_xlabel(ax1_xlabel)
             if '' != ax1_ylabel:
-                self.MplWidget.canvas.axes.set_ylabel(ax1_ylabel)
+                self.MplWidget.canvas.axes_1.set_ylabel(ax1_ylabel)
 
             if '' != ax2_xlabel:
                 self.MplWidget.canvas.axes_2.set_xlabel(ax2_xlabel)
@@ -610,10 +639,10 @@ class MatplotlibWidget(QMainWindow):
 
                     # Timestamp 이면.
                     # UTC Timestamp 는 1970-01-01 00h00m00s 를 기준으로 초단위로 환산한 숫자
-                    if(      ("float" in str(type(x_data[0])) ) # float 형이면 \
-                        and  (x_data[0] > 1600000000) \
-                        and ( x_data[-1] < 1900000000 ) \
-                        and ("ime" in XAttr)            ):
+                    if(     ("float" in str(type(x_data[0])) ) # float 형이면 \
+                        and (x_data[0] > 1600000000) \
+                        and (x_data[-1] < 1900000000) \
+                        and ("ime" in XAttr) ):
 
                         lstDateTime = Timestamp2DateTime( SPL_dfData[XAttr].values.tolist() )
                         x_data = lstDateTime
@@ -659,25 +688,34 @@ class MatplotlibWidget(QMainWindow):
                 # Y1과 Y2 반복
                 for lstYAttr_Index, lstYAttr in enumerate( [lstY1Attr, lstY2Attr] ):
 
+                    # Y1, Y2 에 따라 변경
                     colorsY = colorsY1
-                    matplotlib_axes = self.MplWidget.canvas.axes
-                    if( lstYAttr_Index == 1 ): # 현재가 Y1인지 Y2 인지에 따라 변경
+                    matplotlib_axes = self.MplWidget.canvas.axes_1
+                    # Global 변수들 for 'pick_event'
+                    lstGlobalYLine = self.lstY1Line
+                    dicGlobalYLineToLegend = self.dicY1LineToLegend
+
+                    # Y1 or Y2 에 따라 변경
+                    if( lstYAttr_Index == 1 ): # 현재가 Y1(0)인지 Y2(1)인지에 따라 변경
                         colorsY = colorsY2
                         matplotlib_axes = self.MplWidget.canvas.axes_2
+                        lstGlobalYLine = self.lstY2Line
+                        dicGlobalYLineToLegend = self.dicY2LineToLegend
 
 
 
                     if (len(lstYAttr) > 0):  # Y1 에 그릴 데이터가 있다면
 
                         # ---------------------------------------------------------------
-                        # legend 표시용 그래프 그리기, 먼저 그리는 데이터 찾기
+                        # legend 표시용 그래프 그리기, 먼저 그리는 데이터 사전준비 
                         # ---------------------------------------------------------------
-                        lstLegendY = []  # Y1 legend 표시 데이터 이름들
+                        lstLegend = []  # Y1 legend 표시 데이터 이름들
                         lstLegendDrawDataPos = []  # Y1 legend 표시 데이터들의 위치 정보
-                        lstLegend_oneY_unique = []  # Y1 legend 중복 없이.
-                        lstY_for_legend = []  # legend 표시를 위해 먼저 그릴 Y 들
+                        lstLegendYValue_unique = []  # Y1 legend 중복 없이.
+                        lstLegendY_Selected = []  # legend 표시를 위해 먼저 그릴 Y 들
 
-                        if (len(lstLegend) > 0):  # 'L' 에 체크가 되었다면
+
+                        if (len(lstLegAttr) > 0):  # 'L' 에 체크가 되었다면
 
                             # 'L' 체크 되었을때
                             #   legend 표시가 30개 이상 일때
@@ -686,19 +724,19 @@ class MatplotlibWidget(QMainWindow):
                             #   legend 표시가 30개 이내 일때
                             #     선택된게 있을 때             : (1st Y로)          legend           나머지 그림
                             #     선택된게 없을 때             : (1st Y로)          legend           나머지 그림
-                            lstLegend_oneY = SPL_dfData[lstLegend].values.tolist()  # legend들의 데이터
-                            lstLegend_oneY = [x[0] for x in lstLegend_oneY]  # legend들의 데이터
-                            lstLegend_oneY_unique = list(np.unique(lstLegend_oneY, return_counts=False))  # Y1 1개의 legend
+                            lstLegendYValue = SPL_dfData[lstLegAttr].values.tolist()  # legend들의 데이터
+                            lstLegendYValue = [x[0] for x in lstLegendYValue]  # legend들의 데이터
+                            lstLegendYValue_unique = list(np.unique(lstLegendYValue, return_counts=False))  # Y1 1개의 legend
 
                             # 먼저 그릴 Y 찾기
-                            if (len(lstLegend_oneY_unique) > CFG_Legend_Max):
+                            if (len(lstLegendYValue_unique) > CFG_Legend_Max):
                                 for SelectedItemText in lstSelectedItemText:
                                     if SelectedItemText in lstYAttr:
-                                        lstY_for_legend.append(SelectedItemText)
-                                if (len(lstY_for_legend) == 0):  # 선택된 중인 Y1 이 없으면, 1st Y
-                                    lstY_for_legend.append(lstYAttr[0])
+                                        lstLegendY_Selected.append(SelectedItemText)
+                                if (len(lstLegendY_Selected) == 0):  # 선택된 중인 Y1 이 없으면, 1st Y
+                                    lstLegendY_Selected.append(lstYAttr[0])
                             else:
-                                lstY_for_legend.append(lstYAttr[0])
+                                lstLegendY_Selected.append(lstYAttr[0])
 
 
                         else:
@@ -714,9 +752,9 @@ class MatplotlibWidget(QMainWindow):
 
                                 for SelectedItemText in lstSelectedItemText:
                                     if SelectedItemText in lstYAttr:
-                                        lstY_for_legend.append(SelectedItemText)
+                                        lstLegendY_Selected.append(SelectedItemText)
 
-                                if (len(lstY_for_legend) == 0):
+                                if (len(lstLegendY_Selected) == 0):
                                     '''
                                     # Y에 표시할 값 max 와 min 값 기준으로 정렬
                                     series_Y_max = pd.Series(SPL_dfData[lstYAttr].max())
@@ -729,20 +767,20 @@ class MatplotlibWidget(QMainWindow):
             
                                     # Y (max6, min5)
                                     for Y_sorted in sorted_desscending[0:min(6, int(len(sorted_desscending)/2))]: # 큰거 6개
-                                        lstY_for_legend.append( Y_sorted )
+                                        lstLegendY_Selected.append( Y_sorted )
                                     for Y_sorted in reversed(sorted_ascending): # 작은거 5개
-                                        if(Y_sorted not in lstY_for_legend) and (len(lstY_for_legend)<(min(11, len(sorted_desscending)))): # 최대 11개
-                                            lstY_for_legend.append( Y_sorted )
+                                        if(Y_sorted not in lstLegendY_Selected) and (len(lstLegendY_Selected)<(min(11, len(sorted_desscending)))): # 최대 11개
+                                            lstLegendY_Selected.append( Y_sorted )
                                     '''
-                                    lstY_for_legend = lstYAttr[:6] + lstYAttr[-5:]
+                                    lstLegendY_Selected = lstYAttr[:6] + lstYAttr[-5:]
 
                             else:
-                                lstY_for_legend = lstYAttr
+                                lstLegendY_Selected = lstYAttr
 
 
 
                         # ------------------------------------------------------
-                        # Y 축 그리기
+                        # Y축 데이터 그래프 그리기
                         # ------------------------------------------------------
 
                         for i, YAttr in enumerate(lstYAttr):
@@ -773,9 +811,11 @@ class MatplotlibWidget(QMainWindow):
                                 x_data = [ (lstColumn.index(YAttr)+random.random()*0.8-0.4) for x in range( len(x_data) ) ]
 
 
-                            # lstLegend에는 신호이름이 저장됨
-                            # lstLegendY 에는 신호이름의 값이 저장됨
-                            if (len(lstLegend) > 0):  # 'L' 에 체크가 되었다면
+
+
+                            # lstLegAttr에는 신호이름이 저장됨
+                            # lstLegend 에는 'L'체크시 신호이름의 값이 저장되고, 그외는 신호이름이 저장됨
+                            if (len(lstLegAttr) > 0):  # 'L' 에 체크가 되었다면
 
                                 # 'L' 체크 되었을때
                                 #   legend 표시가 30개 이상 일때
@@ -785,9 +825,9 @@ class MatplotlibWidget(QMainWindow):
                                 #     선택된게 있을 때             : (1st Y로)          legend           나머지 그림
                                 #     선택된게 없을 때             : (1st Y로)          legend           나머지 그림
 
-                                if (YAttr in lstY_for_legend):
+                                if (YAttr in lstLegendY_Selected):
 
-                                    if (len(lstLegend_oneY_unique) > CFG_Legend_Max):
+                                    if (len(lstLegendYValue_unique) > CFG_Legend_MaxMax):
 
                                         # legend 용 value 값들이 너무 많아 위치 데이터 생성이 어려움
                                         if YAttr in lstSelectedItemText:  # 현재 선택되어 있다면
@@ -795,24 +835,26 @@ class MatplotlibWidget(QMainWindow):
                                                 x_data,
                                                 y_data,
                                                 s=CFG_Makersize_Selected,
-                                                alpha=CFG_Alpha_Selected)
+                                                alpha=CFG_Alpha_Selected,
+                                                picker=True, pickradius=5)  # 5 points tolerance
                                         else:
                                             matplotlib_axes.scatter(
                                                 x_data,
                                                 y_data,
                                                 s=CFG_Makersize_Unselected,
-                                                alpha=CFG_Alpha_Unselected)
+                                                alpha=CFG_Alpha_Unselected,
+                                                picker=True, pickradius=5)  # 5 points tolerance
                                         # line.set_label( YAttr ) # 'Figure Options' 창에서 Curve이름 표시하기 위해
 
 
                                     else:
 
                                         # 첫번째 Legend의 데이터 위치와 그외 데이터로 위치를 분리함
-                                        for Legend_oneY in lstLegend_oneY_unique:  # legend 별 1개 씩 처리함
-                                            if (Legend_oneY not in lstLegendY):  # 이전에 표시하지 않은 legend의 데이터라면.
-                                                npLegendDrawDataPos = np.where(np.array(lstLegend_oneY) == Legend_oneY)[0]
+                                        for LegendYValue in lstLegendYValue_unique:  # legend 별 1개 씩 처리함
+                                            if (LegendYValue not in lstLegend):  # 이전에 표시하지 않은 legend의 데이터라면.
+                                                npLegendDrawDataPos = np.where(np.array(lstLegendYValue) == LegendYValue)[0]
                                                 lstLegendDrawDataPos.append(npLegendDrawDataPos)  # legend 그린 후 나머지 그릴때 안 그리려고 저장
-                                                lstLegendY.append(Legend_oneY)  # 표시한 legend에 등록
+                                                lstLegend.append(LegendYValue)  # 표시한 legend에 등록
 
                                                 if YAttr in lstSelectedItemText:  # 현재 선택되어 있다면
                                                     matplotlib_axes.scatter(
@@ -820,14 +862,16 @@ class MatplotlibWidget(QMainWindow):
                                                         y_data[npLegendDrawDataPos],
                                                         s=CFG_Makersize_Selected,
                                                         alpha=CFG_Alpha_Selected,
-                                                        color=colorsY[lstLegend_oneY_unique.index(Legend_oneY) % len(colorsY)])
+                                                        color=colorsY[lstLegendYValue_unique.index(LegendYValue) % len(colorsY)],
+                                                        picker=True, pickradius=5)  # 5 points tolerance
                                                 else:
                                                     matplotlib_axes.scatter(
                                                         x_data[npLegendDrawDataPos],
                                                         y_data[npLegendDrawDataPos],
                                                         s=CFG_Makersize_Unselected,
                                                         alpha=CFG_Alpha_Unselected,
-                                                        color=colorsY[lstLegend_oneY_unique.index(Legend_oneY) % len(colorsY)])
+                                                        color=colorsY[lstLegendYValue_unique.index(LegendYValue) % len(colorsY)],
+                                                        picker=True, pickradius=5)  # 5 points tolerance
                                                 # line.set_label( YAttr ) # 'Figure Options' 창에서 Curve이름 표시하기 위해
 
 
@@ -841,18 +885,18 @@ class MatplotlibWidget(QMainWindow):
                                 #     선택된게 있을 때             : (모든 Ys)          legend
                                 #     선택된게 없을 때             : (모든 Ys)          legend
 
-                                if (YAttr in lstY_for_legend):
+                                if (YAttr in lstLegendY_Selected):
 
                                     if (len(lstYAttr) > CFG_Legend_Max):
                                         if YAttr in lstSelectedItemText:  # 선택된게 있을 때
-                                            lstLegendY.append(YAttr)
+                                            lstLegend.append(YAttr)
                                         else:  # 선택된게 없을 때, (max5, ... ,min5)
-                                            if (YAttr == lstY_for_legend[5]):
-                                                lstLegendY.append(". . .")
+                                            if (YAttr == lstLegendY_Selected[5]):
+                                                lstLegend.append(". . .")
                                             else:
-                                                lstLegendY.append(YAttr)
+                                                lstLegend.append(YAttr)
                                     else:  #
-                                        lstLegendY.append(YAttr)
+                                        lstLegend.append(YAttr)
 
                                     if YAttr in lstSelectedItemText:  # 현재 선택되어 있다면
                                         matplotlib_axes.scatter(
@@ -860,14 +904,16 @@ class MatplotlibWidget(QMainWindow):
                                             y_data,
                                             s=CFG_Makersize_Selected,
                                             alpha=CFG_Alpha_Selected,
-                                            color=colorsY[i%len(colorsY)] )
+                                            color=colorsY[i%len(colorsY)],
+                                            picker=True, pickradius=5)  # 5 points tolerance
                                     else:
                                         matplotlib_axes.scatter(
                                             x_data,
                                             y_data,
                                             s=CFG_Makersize_Unselected,
                                             alpha=CFG_Alpha_Unselected,
-                                            color=colorsY[i%len(colorsY)] )
+                                            color=colorsY[i%len(colorsY)],
+                                            picker=True, pickradius=5)  # 5 points tolerance
                                     # line.set_label( YAttr ) # 'Figure Options' 창에서 Curve이름 표시하기 위해
 
 
@@ -877,7 +923,7 @@ class MatplotlibWidget(QMainWindow):
                         # ------------------------------------------------------
                         # Legend 표시
                         # ------------------------------------------------------
-                        if (len(lstLegend) > 0):  # 'L' 에 체크가 되었다면
+                        if (len(lstLegAttr) > 0):  # 'L' 에 체크가 되었다면
                             # 'L' 체크 되었을때
                             #   legend 표시가 30개 이상 일때
                             #     선택된게 있을 때             : 1st 선택된 Ys    (many "signal")    나머지 그림
@@ -885,7 +931,7 @@ class MatplotlibWidget(QMainWindow):
                             #   legend 표시가 30개 이내 일때
                             #     선택된게 있을 때             : 1st Y로          (legend)           나머지 그림
                             #     선택된게 없을 때             : 1st Y로          (legend)           나머지 그림
-                            if (len(lstLegend_oneY_unique) > CFG_Legend_Max):
+                            if (len(lstLegendYValue_unique) > CFG_Legend_Max):
                                 Legend = "too many legends"  # 먼저 그릴 Y 찾기
 
                                 if( lstYAttr_Index == 0 ): # Y1 그릴때
@@ -900,12 +946,12 @@ class MatplotlibWidget(QMainWindow):
                             else:
                                 if (lstYAttr_Index == 0):  # Y1 그릴때
                                     if (len(lstY2Attr) > 0):  # Y1, Y2 그릴때
-                                        matplotlib_axes.legend(lstLegendY, loc='upper left')
+                                        matplotlib_axes.legend(lstLegend, loc='upper left')
                                     else:
-                                        matplotlib_axes.legend(lstLegendY)
+                                        matplotlib_axes.legend(lstLegend)
                                 elif( lstYAttr_Index == 1 ): # Y2 그릴때
                                     if (len(lstY2Attr) > 0):  # Y2 그릴게 있다면
-                                        matplotlib_axes.legend(lstLegendY, loc='upper right')
+                                        matplotlib_axes.legend(lstLegend, loc='upper right')
 
                         else:
 
@@ -919,13 +965,13 @@ class MatplotlibWidget(QMainWindow):
 
                             if (lstYAttr_Index == 0):  # Y1 그릴때
                                 if (len(lstY2Attr) > 0):  # Y1, Y2 그릴때
-                                    matplotlib_axes.legend(lstLegendY, loc='upper left')
+                                    matplotlib_axes.legend(lstLegend, loc='upper left')
                                 else:
-                                    matplotlib_axes.legend(lstLegendY)
+                                    matplotlib_axes.legend(lstLegend)
 
                             elif (lstYAttr_Index == 1):  # Y2 그릴때
                                 if (len(lstY2Attr) > 0):  # Y2 그릴게 있다면
-                                    matplotlib_axes.legend(lstLegendY, loc='upper right')
+                                    matplotlib_axes.legend(lstLegend, loc='upper right')
 
 
 
@@ -937,12 +983,12 @@ class MatplotlibWidget(QMainWindow):
                         # Legend 표시외 그래프 그리기
                         # 나머지 데이터 그리기
                         # ------------------------------------------------------
-                        if (len(lstLegend) > 0):  # 'L' 에 체크가 되었다면
+                        if (len(lstLegAttr) > 0):  # 'L' 에 체크가 되었다면
 
 
 
                             for i, YAttr in enumerate(lstYAttr):
-                                if YAttr not in lstY_for_legend:
+                                if YAttr not in lstLegendY_Selected:
 
                                     # 셀별로 값 확인하기 위해서
                                     if (XAttr == "column_index"):
@@ -951,7 +997,7 @@ class MatplotlibWidget(QMainWindow):
 
                                     y_data = SPL_dfData[YAttr].to_numpy()
 
-                                    if (len(lstLegend_oneY_unique) > CFG_Legend_Max):
+                                    if (len(lstLegendYValue_unique) > CFG_Legend_Max):
 
                                         # legend 용 value 값들이 너무 많아 위치 데이터 생성이 어려움
                                         if YAttr in lstSelectedItemText:  # 현재 선택되어 있다면
@@ -959,18 +1005,20 @@ class MatplotlibWidget(QMainWindow):
                                                 x_data,
                                                 y_data,
                                                 s=CFG_Makersize_Selected,
-                                                alpha=CFG_Alpha_Selected)
+                                                alpha=CFG_Alpha_Selected,
+                                                picker=True, pickradius=5)  # 5 points tolerance
                                         else:
                                             matplotlib_axes.scatter(
                                                 x_data,
                                                 y_data,
                                                 s=CFG_Makersize_Unselected,
-                                                alpha=CFG_Alpha_Unselected)
+                                                alpha=CFG_Alpha_Unselected,
+                                                picker=True, pickradius=5)  # 5 points tolerance
                                         # line.set_label( YAttr ) # 'Figure Options' 창에서 Curve이름 표시하기 위해
 
                                     else:
-                                        lstDataPos = []
-                                        for j, Legend in enumerate(lstLegend_oneY_unique):
+
+                                        for j, Legend in enumerate(lstLegendYValue_unique):
                                             lstDataPos = lstLegendDrawDataPos[j]
 
                                             if YAttr in lstSelectedItemText:  # 현재 선택되어 있다면
@@ -979,19 +1027,21 @@ class MatplotlibWidget(QMainWindow):
                                                     y_data[lstDataPos],
                                                     s=CFG_Makersize_Selected,
                                                     alpha=CFG_Alpha_Selected,
-                                                    color=colorsY1[j % len(colorsY1)])
+                                                    color=colorsY1[j % len(colorsY1)],
+                                                    picker=True, pickradius=5)  # 5 points tolerance
                                             else:
                                                 matplotlib_axes.scatter(
                                                     x_data[lstDataPos],
                                                     y_data[lstDataPos],
                                                     s=CFG_Makersize_Unselected,
                                                     alpha=CFG_Alpha_Unselected,
-                                                    color=colorsY1[j % len(colorsY1)])
+                                                    color=colorsY1[j % len(colorsY1)],
+                                                    picker=True, pickradius=5)  # 5 points tolerance
                                             # line.set_label( YAttr ) # 'Figure Options' 창에서 Curve이름 표시하기 위해
 
                         else:
                             for i, YAttr in enumerate(lstYAttr):
-                                if YAttr not in lstY_for_legend:
+                                if YAttr not in lstLegendY_Selected:
 
                                     # 셀별로 값 확인하기 위해
                                     if (XAttr == "column_index"):
@@ -1005,13 +1055,15 @@ class MatplotlibWidget(QMainWindow):
                                             x_data,
                                             y_data,
                                             s=CFG_Makersize_Selected,
-                                            alpha=CFG_Alpha_Selected)
+                                            alpha=CFG_Alpha_Selected,
+                                            picker=True, pickradius=5)  # 5 points tolerance
                                     else:
                                         matplotlib_axes.scatter(
                                             x_data,
                                             y_data,
                                             s=CFG_Makersize_Unselected,
-                                            alpha=CFG_Alpha_Unselected)
+                                            alpha=CFG_Alpha_Unselected,
+                                            picker=True, pickradius=5)  # 5 points tolerance
                                     # line.set_label( YAttr ) # 'Figure Options' 창에서 Curve이름 표시하기 위해
 
 
@@ -1044,27 +1096,28 @@ class MatplotlibWidget(QMainWindow):
 
 
 
-                self.MplWidget.canvas.axes.grid(True)
-                self.MplWidget.canvas.axes.set_title( SPL_strFileName )
-                #self.MplWidget.canvas.axes.title.set_size(20)
+                self.MplWidget.canvas.axes_1.grid(True)
+                self.MplWidget.canvas.axes_1.set_title( SPL_strFileName )
+                #self.MplWidget.canvas.axes_1.title.set_size(20)
 
                 if (len(XAttr) > 0):  # X에 그릴 데이터가 있다면
-                    self.MplWidget.canvas.axes.set_xlabel(XAttr) # 1개만 들어올것임
+                    self.MplWidget.canvas.axes_1.set_xlabel(XAttr) # 1개만 들어올것임
                 else:
-                    self.MplWidget.canvas.axes.set_xlabel("sequnce")
+                    self.MplWidget.canvas.axes_1.set_xlabel("sequnce")
 
 
                 if (len(lstY1Attr) > 0):  # Y1에 그릴 데이터가 있다면
                     if (len(lstY1Attr) == 1):  # 여러개 일수 있음
-                        self.MplWidget.canvas.axes.set_ylabel(lstY1Attr[0])
+                        self.MplWidget.canvas.axes_1.set_ylabel(lstY1Attr[0])
                     else:
                         strLabel = lstY1Attr[0].strip() # 선행, 후행 공백을 삭제
                         for Y1Attr in lstY1Attr:
                             # 공통인 문잘열을 찾음
                             strLabel = max(get_str_array(Y1Attr) & get_str_array(strLabel), key=len)
-                            if( len(strLabel) == 0):
+                            if( len(strLabel)==0 ): #같은게 하나도 없으면 반복문 빠져나옴
                                 break
-                        self.MplWidget.canvas.axes.set_ylabel(strLabel)
+                        if( len(strLabel)>0 ):
+                            self.MplWidget.canvas.axes_1.set_ylabel(strLabel)
 
                 if (len(lstY2Attr) > 0):  # Y1에 그릴 데이터가 있다면
                     if (len(lstY2Attr) == 1):  # 여러개 일수 있음
@@ -1074,14 +1127,15 @@ class MatplotlibWidget(QMainWindow):
                         for Y2Attr in lstY2Attr:
                             # 공통인 문잘열을 찾음
                             strLabel = max(get_str_array(Y2Attr) & get_str_array(strLabel), key=len)
-                            if( len(strLabel) == 0):
+                            if (len(strLabel) == 0):  # 같은게 하나도 없으면 반복문 빠져나옴
                                 break
-                        self.MplWidget.canvas.axes_2.set_ylabel(strLabel)
+                        if( len(strLabel) > 0 ):
+                            self.MplWidget.canvas.axes_2.set_ylabel(strLabel)
 
 
                 # X 축 신호가 바뀌면, 오류가 나는 경우 있음
                 try:
-                    self.MplWidget.canvas.axes.autoscale_view()
+                    self.MplWidget.canvas.axes_1.autoscale_view()
 
                     # 셀별로 값 확인하기 위해서
                     if (XAttr == "column_index"):
@@ -1095,13 +1149,22 @@ class MatplotlibWidget(QMainWindow):
                         lstColIndex.append( max(lstColIndex)+0.5 )
                         x_data = lstColIndex
 
+
+                    # matpltlib 의 date는 "1970-01-01 00:00:00"는 0.0
+                    #                    "2000-01-01 00:00:00"는 10957.000
+                    #                    "2100-01-01 00:00:00"는 47482.000 로 표시됨
+                    if (    (self.xdata_type == type(datetime.datetime.now()))
+                         or (self.xdata_type == type(np.datetime64('2023-03-09')))):
+                        x_data = mdates.date2num(x_data)
+
+
                     x_max = max(x_data)
                     x_min = min(x_data)
-                    x_left, x_right = self.MplWidget.canvas.axes.get_xlim()
+                    x_left, x_right = self.MplWidget.canvas.axes_1.get_xlim()
                     if( (x_right-x_left) > (x_max-x_min)*3 ):
-                        print("x-axis", x_left, x_right, " xdata:", x_min, x_max)
-                        width = max(x_data) - min(x_data)
-                        self.MplWidget.canvas.axes.set_xlim(min(x_data) - width/20, max(x_data) + width/20)
+                        # print("x-axis", x_left, x_right, " xdata:", x_min, x_max)
+                        width = max(x_data) - min(x_data) # X축 범위 조정 위해
+                        self.MplWidget.canvas.axes_1.set_xlim(min(x_data) - width/20, max(x_data) + width/20)
 
                 except Exception as e:
                     pass # max()나 min()을 구할수 없는 데이터타입일때 오류 발생
@@ -1112,10 +1175,56 @@ class MatplotlibWidget(QMainWindow):
                 # 화면에 그리기
                 # ------------------------------------------------------
                 try:
+                    # plot
                     self.MplWidget.canvas.draw()
                 except Exception as e:
                     print(e)
                     _ = QMessageBox.information(self, e)
+
+
+
+    def onMplMouseUp(self, event):
+        """
+        Mouse button up callback
+        """
+        # 마우스 UP시 마지막 클릭 정보 지움 
+        self.last_artist = None
+        pass
+
+
+
+    def onMplMouseDown(self, event):
+        """
+        Mouse button down callback
+        """
+        pass
+
+
+
+    def onMplMouseMotion(self, event):
+        """
+        Mouse motion callback
+        """
+        pass
+
+
+
+    def onMplPick(self, event):
+        """
+        Mouse pick callback
+        """
+
+        pass
+
+
+
+    def onMplWheel(self, event):
+        """
+        Mouse wheel scroll callback
+        """
+        pass
+
+
 
 
 
