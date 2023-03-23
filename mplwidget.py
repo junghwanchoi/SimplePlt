@@ -3,10 +3,11 @@
 # ------------------------------------------------------
 from PyQt5.QtWidgets import *
 
-from matplotlib.backends.backend_qt5agg import FigureCanvas
+import matplotlib as mpl
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import matplotlib.pyplot as plt
 
-from matplotlib.figure import Figure
-import matplotlib
+
 
 # 한글 구현
 font_ko = {
@@ -21,8 +22,9 @@ class MplWidget(QWidget):
     def __init__(self, parent = None):
 
         QWidget.__init__(self, parent)
-        
-        self.canvas = FigureCanvas(Figure())
+
+        self.fig = plt.Figure()
+        self.canvas = FigureCanvas( self.fig )
         
         vertical_layout = QVBoxLayout()
         vertical_layout.addWidget(self.canvas)
@@ -30,8 +32,6 @@ class MplWidget(QWidget):
 
         # 한글 구현
         try:
-            matplotlib.rc( 'font', **font_ko )
+            mpl.rc( 'font', **font_ko )
         except:
-            matplotlib.rc( 'font', **font_en )
-
-            
+            mpl.rc( 'font', **font_en )
