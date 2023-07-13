@@ -1,10 +1,10 @@
 # ------------------------------------------------------
 # ---------------------- main.py -----------------------
 # ------------------------------------------------------
-from PyQt5.QtWidgets import (QApplication, QInputDialog, QMainWindow, QMessageBox, QFileDialog, QTableWidgetItem, QCheckBox)
+from PyQt5.QtWidgets import (QApplication, QInputDialog, QMainWindow, QMessageBox, QFileDialog, QTableWidgetItem, QCheckBox, QDialog, QAction)
 from PyQt5.uic import loadUi
 from PyQt5.QtGui import QIcon
-# from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt
 
 from matplotlib.backends.backend_qt5agg import (NavigationToolbar2QT as NavigationToolbar)
 import matplotlib.backends.qt_editor.figureoptions as figureoptions
@@ -23,14 +23,22 @@ import random
 
 
 # Configuration for SimplePlt
+ChartType_Plot = 1
+ChartType_Scatter = 2
+ChartType_Bar = 3
+CFG_ChartType = ChartType_Plot
 CFG_Legend_Max = 30
 CFG_Legend_MaxMax = 600
-CFG_Makersize_Selected = 20
-CFG_Alpha_Selected = 1.0
-CFG_Makersize_Unselected = 1
-CFG_Alpha_Unselected = 0.7
-
-
+CFG_Plot_DrawType = "steps-post"
+CFG_Plot_Alpha_Selected = 1.0
+CFG_Plot_Alpha_Unselected = 0.8
+CFG_Scatter_Alpha_Selected = 0.8
+CFG_Scatter_Alpha_Unselected = 0.6
+CFG_Scatter_MarkerSize_Selected = 20
+CFG_Scatter_MarkerSize_Unselected = 1
+CFG_Bar_ColorGroup = "PSA_Wave"
+CFG_Bar_Alpha_Unselected = 0.1
+CFG_Bar_DataLength = 10
 
 # Global variables
 SPL_dfData = pd.DataFrame()
@@ -38,6 +46,79 @@ SPL_dfData = pd.DataFrame()
 #                                        0:none, 1:첫번째(X), 2:두번째(Y1), ...
 SPL_lstChkData = [] # ["  signal name  ", 0]
 SPL_strFileName = ""
+
+
+
+
+
+
+CFG_lstGrouping_index_PSA6Module = [
+    # text        Cell index ( not Cell No)
+    ["module_01", [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13]],
+    ["module_02", [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]],
+    ["module_03", [28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41]],
+    ["module_04", [42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55]],
+    ["module_05", [56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69]],
+    ["module_06", [70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83]],
+]
+
+
+CFG_lstGrouping_index_PSA7Module = [
+    # text        Cell index ( not Cell No)
+    ["module_01", [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13]],
+    ["module_02", [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]],
+    ["module_03", [28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41]],
+    ["module_04", [42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55]],
+    ["module_05", [56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69]],
+    ["module_06", [70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83]],
+    ["module_07", [84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95]],
+]
+
+CFG_lstGrouping_index_FcaRu = [
+    # text        Cell index ( not Cell No)
+    ["module_01", [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15]],
+    ["module_02", [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]],
+    ["module_03", [32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47]],
+    ["module_04", [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]],
+    ["module_05", [64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79]],
+    ["module_06", [80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95]],
+
+]
+
+CFG_lstGrouping_index_GmBolt = [
+    # text        Cell index ( not Cell No)
+    ["module_01", [ 0,  1,  2,  3,  4,  5,  6,  7 ]],
+    ["module_02", [ 8,  9, 10, 11, 12, 13, 14, 15 ]],
+    ["module_03", [16, 17, 18, 19, 20, 21, 22, 23 ]],
+    ["module_04", [24, 25, 26, 27, 28, 29, 30, 31, 32 ]],
+    ["module_05", [33, 34, 35, 36, 37, 38, 39, 40 ]],
+    ["module_06", [41, 42, 43, 44, 45, 46, 47 ]],
+    ["module_07", [48, 49, 50, 51, 52, 53, 54, 55 ]],
+    ["module_08", [56, 57, 58, 59, 60, 61, 62, 63 ]],
+    ["module_09", [64, 65, 66, 67, 68, 69, 70, 71 ]],
+    ["module_10", [72, 73, 74, 75, 76, 77, 78, 79 ]],
+    ["module_11", [80, 81, 82, 83, 84, 85, 86, 87 ]],
+    ["module_12", [88, 89, 90, 91, 92, 93, 94, 95 ]],
+
+]
+
+CFG_lstGrouping_index_RsaE57 = [
+    # text        Cell No
+    ["module_01", [ 0,  1,  2,  3,  4,  5,  6,  7]],
+    ["module_02", [ 8,  9, 10, 11, 12, 13, 14, 15]],
+    ["module_03", [16, 17, 18, 19, 20, 21, 22, 23]],
+    ["module_04", [24, 25, 26, 27, 28, 29, 30, 31]],
+    ["module_05", [32, 33, 34, 35, 36, 37, 38, 39]],
+    ["module_06", [40, 41, 42, 43, 44, 45, 46, 47]],
+    ["module_07", [48, 49, 50, 51, 52, 53, 54, 55]],
+    ["module_08", [56, 57, 58, 59, 60, 61, 62, 63]],
+    ["module_09", [64, 65, 66, 67, 68, 69, 70, 71]],
+    ["module_10", [72, 73, 74, 75, 76, 77, 78, 79]],
+    ["module_11", [80, 81, 82, 83, 84, 85, 86, 87]],
+    ["module_12", [88, 89, 90, 91, 92, 93, 94, 95]],
+]
+
+CFG_lstGrouping_index  = CFG_lstGrouping_index_PSA7Module
 
 
 
@@ -53,9 +134,10 @@ def Timestamp2DateTime( lstTimestamp ):
 
 
 
+#                                                                2021-06-30T07:36:10.000Z  2021-06-30T07:36:10Z 
+strptime_patterns = ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%dT%H:%M:%S.%fZ', '%Y-%m-%dT%H:%M:%SZ', "%d-%m-%Y", "%Y-%m-%d"]
 def GetDatetime(strClock): # 다양한 형태의 clock 패턴을 처리
-    # 2021-06-30T07:36:10.000Z
-    strptime_patterns = ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M:%S.%f', "%d-%m-%Y", "%Y-%m-%d", '%Y-%m-%dT%H:%M:%S.%fZ']
+    global strptime_patterns
 
     boNoon = False
     if " 오전" in strClock:
@@ -64,11 +146,24 @@ def GetDatetime(strClock): # 다양한 형태의 clock 패턴을 처리
         strClock = strClock.replace(" 오후", "")
         boNoon = True
 
-    for pattern in strptime_patterns:
+
+    try:
+        datetimeClock = datetime.datetime.fromisoformat(strClock)
+        if boNoon == True:
+            datetimeClock = datetimeClock + datetime.timedelta(hours=12)
+        return datetimeClock
+    except:
+        pass
+
+
+    for (i, pattern) in enumerate(strptime_patterns):
         try:
             datetimeClock = datetime.datetime.strptime(strClock, pattern)
             if boNoon == True:
                 datetimeClock = datetimeClock + datetime.timedelta(hours=12)
+            if (i!=0): # 다음을 위해 맨 앞에 위치
+                strptime_patterns[i] = strptime_patterns[0]
+                strptime_patterns[0] = pattern
             return datetimeClock
         except:
             pass
@@ -206,6 +301,181 @@ def get_str_array(s):
     return {s[i:j] for i in range(len(s)) for j in range(i, len(s) + 1)}
 
 
+
+
+
+
+class dlgChartType(QDialog):
+
+
+    def __init__(self):
+        global CFG_ChartType
+        global CFG_Plot_DrawType
+        global CFG_Plot_Alpha_Selected
+        global CFG_Plot_Alpha_Unselected
+        global CFG_Scatter_Alpha_Selected
+        global CFG_Scatter_Alpha_Unselected
+        global CFG_Scatter_MarkerSize_Selected
+        global CFG_Scatter_MarkerSize_Unselected
+        global CFG_Bar_Alpha_Unselected
+
+        super().__init__()
+        self.setupUI()
+        self.setWindowIcon(QIcon('iconChartTypeOption.png')) # 맨왼쪽위 아이콘
+        self.setWindowTitle("Chart type setting")
+
+        # widget의 초기값
+        if(CFG_ChartType == ChartType_Plot):
+            self.radioButton_plot.setChecked(True)
+            self.radioButton_scatter.setChecked(False)
+            self.radioButton_bar.setChecked(False)
+            self.tabWidget.setCurrentIndex(0)
+
+        elif(CFG_ChartType == ChartType_Scatter):
+            self.radioButton_plot.setChecked(False)
+            self.radioButton_scatter.setChecked(True)
+            self.radioButton_bar.setChecked(False)
+            self.tabWidget.setCurrentIndex(1)
+
+        elif(CFG_ChartType == ChartType_Bar):
+            self.radioButton_plot.setChecked(False)
+            self.radioButton_scatter.setChecked(False)
+            self.radioButton_bar.setChecked(True)
+            self.tabWidget.setCurrentIndex(2)
+
+        # stopping check box to get checked
+        self.radioButton_plot.setCheckable(True)
+        self.radioButton_scatter.setCheckable(False)
+        self.radioButton_bar.setCheckable(False)
+
+
+        self.comboBox_Plot_DrawStyle.addItem("default")
+        self.comboBox_Plot_DrawStyle.addItem("steps-post")
+        if( CFG_Plot_DrawType=="default"):
+            self.comboBox_Plot_DrawStyle.setCurrentIndex(0)
+        elif( CFG_Plot_DrawType=="steps-post"):
+            self.comboBox_Plot_DrawStyle.setCurrentIndex(1)
+
+        self.comboBox_Bar_ColorGroup.addItem("none")
+        self.comboBox_Bar_ColorGroup.addItem("PSA_Wave")
+        self.comboBox_Bar_ColorGroup.addItem("FCA_RU")
+        self.comboBox_Bar_ColorGroup.addItem("GM_Bolt")
+        if( CFG_Bar_ColorGroup=="none"):
+            self.comboBox_Bar_ColorGroup.setCurrentIndex(0)
+        elif( CFG_Bar_ColorGroup=="PSA_Wave"):
+            self.comboBox_Bar_ColorGroup.setCurrentIndex(1)
+        elif( CFG_Bar_ColorGroup=="FCA_RU"):
+            self.comboBox_Bar_ColorGroup.setCurrentIndex(2)
+        elif( CFG_Bar_ColorGroup=="GM_Bolt"):
+            self.comboBox_Bar_ColorGroup.setCurrentIndex(3)
+
+
+        self.doubleSpinBox_Plot_Alpha_Select.setRange(0, 1) # 최소값 ~ 최대값
+        self.doubleSpinBox_Plot_Alpha_Select.setSingleStep(0.1) # 한 스텝 변화
+        self.doubleSpinBox_Plot_Alpha_Select.setDecimals(3) # 소수점 아래 표시될 자리수
+        self.doubleSpinBox_Plot_Alpha_Select.setValue(CFG_Plot_Alpha_Selected)
+        self.doubleSpinBox_Plot_Alpha_NoSelect.setRange(0, 1) # 최소값 ~ 최대값
+        self.doubleSpinBox_Plot_Alpha_NoSelect.setSingleStep(0.1) # 한 스텝 변화
+        self.doubleSpinBox_Plot_Alpha_NoSelect.setDecimals(3) # 소수점 아래 표시될 자리수
+        self.doubleSpinBox_Plot_Alpha_NoSelect.setValue(CFG_Plot_Alpha_Unselected)
+
+        self.doubleSpinBox_Scatter_Alpha_Select.setRange(0, 1) # 최소값 ~ 최대값
+        self.doubleSpinBox_Scatter_Alpha_Select.setSingleStep(0.1) # 한 스텝 변화
+        self.doubleSpinBox_Scatter_Alpha_Select.setDecimals(3) # 소수점 아래 표시될 자리수
+        self.doubleSpinBox_Scatter_Alpha_Select.setValue(CFG_Scatter_Alpha_Selected)
+        self.doubleSpinBox_Scatter_Alpha_NoSelect.setRange(0, 1) # 최소값 ~ 최대값
+        self.doubleSpinBox_Scatter_Alpha_NoSelect.setSingleStep(0.1) # 한 스텝 변화
+        self.doubleSpinBox_Scatter_Alpha_NoSelect.setDecimals(3) # 소수점 아래 표시될 자리수
+        self.doubleSpinBox_Scatter_Alpha_NoSelect.setValue(CFG_Scatter_Alpha_Unselected)
+
+        self.doubleSpinBox_Scatter_MarkerSize_Select.setRange(0, 100) # 최소값 ~ 최대값
+        self.doubleSpinBox_Scatter_MarkerSize_Select.setSingleStep(1) # 한 스텝 변화
+        self.doubleSpinBox_Scatter_MarkerSize_Select.setDecimals(1) # 소수점 아래 표시될 자리수
+        self.doubleSpinBox_Scatter_MarkerSize_Select.setValue(CFG_Scatter_MarkerSize_Selected)
+        self.doubleSpinBox_Scatter_MarkerSize_NoSelect.setRange(0, 100) # 최소값 ~ 최대값
+        self.doubleSpinBox_Scatter_MarkerSize_NoSelect.setSingleStep(1) # 한 스텝 변화
+        self.doubleSpinBox_Scatter_MarkerSize_NoSelect.setDecimals(1) # 소수점 아래 표시될 자리수
+        self.doubleSpinBox_Scatter_MarkerSize_NoSelect.setValue(CFG_Scatter_MarkerSize_Unselected)
+
+
+        self.doubleSpinBox_Bar_Alpha_NoSelect.setRange(0, 1) # 최소값 ~ 최대값
+        self.doubleSpinBox_Bar_Alpha_NoSelect.setSingleStep(0.1) # 한 스텝 변화
+        self.doubleSpinBox_Bar_Alpha_NoSelect.setDecimals(3) # 소수점 아래 표시될 자리수
+        self.doubleSpinBox_Bar_Alpha_NoSelect.setValue(CFG_Bar_Alpha_Unselected)
+
+        self.doubleSpinBox_Bar_DataLength.setRange(0, 1000) # 최소값 ~ 최대값
+        self.doubleSpinBox_Bar_DataLength.setSingleStep(1) # 한 스텝 변화
+        self.doubleSpinBox_Bar_DataLength.setDecimals(0) # 소수점 아래 표시될 자리수
+        self.doubleSpinBox_Bar_DataLength.setValue(CFG_Bar_DataLength)
+
+
+
+        self.pushButton_OK.clicked.connect(self.OnBtnClicked_OK)
+
+    def setupUI(self):
+        loadUi("qt_designer_dialog_ChartType.ui", self)
+
+
+    # 다이얼로그 설정값 업데이트
+    # main window -> Diaglog     : dlgChartType.__init__(self) 함수에서
+    # Diaglog     -> main window : dlgChartType.OnBtnClicked_OK(self) 함수에서
+    # (참고) dlgChartType 실행함수 : OnToolbarClick_DlgChartType(self)
+    def OnBtnClicked_OK(self):
+        global CFG_ChartType
+        global CFG_Plot_DrawType
+        global CFG_Plot_Alpha_Selected
+        global CFG_Plot_Alpha_Unselected
+        global CFG_Scatter_Alpha_Selected
+        global CFG_Scatter_Alpha_Unselected
+        global CFG_Scatter_MarkerSize_Selected
+        global CFG_Scatter_MarkerSize_Unselected
+        global CFG_Bar_Alpha_Unselected
+        global CFG_Bar_ColorGroup
+        global CFG_Bar_DataLength
+
+        # if self.radioButton_plot.isChecked():
+        #     CFG_ChartType = ChartType_Plot
+        # elif self.radioButton_scatter.isChecked():
+        #     CFG_ChartType = ChartType_Scatter
+
+        if(self.comboBox_Plot_DrawStyle.currentIndex() == 0):
+            CFG_Plot_DrawType = "default"
+        elif(self.comboBox_Plot_DrawStyle.currentIndex() == 1):
+            CFG_Plot_DrawType = "steps-post"
+
+        if(self.comboBox_Bar_ColorGroup.currentIndex() == 0):
+            CFG_Bar_ColorGroup = "none"
+        elif(self.comboBox_Bar_ColorGroup.currentIndex() == 1):
+            CFG_Bar_ColorGroup = "PSA_Wave"
+        elif(self.comboBox_Bar_ColorGroup.currentIndex() == 2):
+            CFG_Bar_ColorGroup = "FCA_RU"
+        elif(self.comboBox_Bar_ColorGroup.currentIndex() == 3):
+            CFG_Bar_ColorGroup = "GM_Bolt"
+
+
+
+        CFG_Plot_Alpha_Selected = self.doubleSpinBox_Plot_Alpha_Select.value()
+        CFG_Plot_Alpha_Unselected = self.doubleSpinBox_Plot_Alpha_NoSelect.value()
+        CFG_Scatter_Alpha_Selected = self.doubleSpinBox_Scatter_Alpha_Select.value()
+        CFG_Scatter_Alpha_Unselected = self.doubleSpinBox_Scatter_Alpha_NoSelect.value()
+        CFG_Scatter_MarkerSize_Selected = self.doubleSpinBox_Scatter_MarkerSize_Select.value()
+        CFG_Scatter_MarkerSize_Unselected = self.doubleSpinBox_Scatter_MarkerSize_NoSelect.value()
+        CFG_Bar_Alpha_Unselected = self.doubleSpinBox_Bar_Alpha_NoSelect.value()
+        CFG_Bar_DataLength = self.doubleSpinBox_Bar_DataLength.value()
+
+
+        self.close()
+
+
+
+
+
+
+
+
+
+
+
 class MatplotlibWidget(QMainWindow):
 
     def __init__(self):
@@ -213,7 +483,7 @@ class MatplotlibWidget(QMainWindow):
         QMainWindow.__init__(self)
 
 
-        loadUi("qt_designer.ui",self)
+        loadUi("qt_designer_main.ui",self)
         self.setWindowIcon(QIcon('iconPlot.png')) # 맨왼쪽위 아이콘
         self.setWindowTitle("Simple Matplotlib w/ GUI")
 
@@ -251,9 +521,9 @@ class MatplotlibWidget(QMainWindow):
                 #                    "2100-01-01 00:00:00"는 47482.000 로 표시됨
                 if( (self.xdata_type==type(datetime.datetime.now()) ) or (self.xdata_type==type(np.datetime64('2023-03-09'))) ):
                     str_x = mdates.num2date(x).strftime('%Y-%m-%d %H:%M:%S')
-                    strRet = ('Left: {1:<40}    Right: {0:<}'.format(*['({}, {:.3f})'.format(str_x, y) for x, y in coords]))
+                    strRet = ('Left: {1:<40}    Right: {0:<}'.format(*['({}, {:.6f})'.format(str_x, y) for x, y in coords]))
                 else:
-                    strRet = ('Left: {1:<40}    Right: {0:<}'.format(*['({:.3f}, {:.3f})'.format(x, y) for x, y in coords]))
+                    strRet = ('Left: {1:<40}    Right: {0:<}'.format(*['({:.6f}, {:.6f})'.format(x, y) for x, y in coords]))
 
                 return strRet
 
@@ -263,17 +533,31 @@ class MatplotlibWidget(QMainWindow):
                                                                 self.MplWidget.canvas.axes_2) # y2이 z-oreder가 높을때
 
 
-        # 툴바
-        self.addToolBar(NavigationToolbar(self.MplWidget.canvas, self))
+
+        # 사용자 툴바
+        actionOpenFile = QAction(QIcon('iconFile.png'), 'open file', self) # action: open file
+        actionOpenFile.setStatusTip("load *.csv file")
+        actionOpenFile.triggered.connect(self.OnToolbarClick_OpenFile)
+
+        actionChartType = QAction(QIcon('iconChartTypeOption.png'), 'option', self) # action: graph option
+        actionChartType.setStatusTip("matplotlib chart type: plot or scatter")
+        actionChartType.triggered.connect(self.OnToolbarClick_DlgChartType)
+
+        self.UserToolbar = self.addToolBar("user toolbar")
+        # self.UserToolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.UserToolbar.addAction(actionOpenFile)
+        self.UserToolbar.addAction(actionChartType)
+
+        # Matplotlib 기본툴바
+        self.addToolBar(NavigationToolbar(self.MplWidget.canvas, "matplotlib toolbar", self))
+
 
         # 버튼 signal
-        self.pushButton_OpenFile.clicked.connect(self.OnBtnClick_OpenFile)
         self.pushButton_Up.clicked.connect(self.OnBtnClick_Up)
         self.pushButton_Down.clicked.connect(self.OnBtnClick_Down)
         self.pushButton_Plt.clicked.connect(self.OnBtnClick_Plt)
 
         # 버튼 아이콘 표시하기
-        self.pushButton_OpenFile.setIcon(QIcon('iconFile.png'))
         self.pushButton_Up.setIcon(QIcon('iconUp.png'))
         self.pushButton_Down.setIcon(QIcon('iconDown.png'))
         self.pushButton_Plt.setIcon(QIcon('iconPlot.png'))
@@ -288,6 +572,7 @@ class MatplotlibWidget(QMainWindow):
 
         # 현재 위치
         self.base_path = os.getcwd()
+        self.table_column_clicked = -1
 
         # List Widget
         #  CSV 파일의 column 이름을 표시
@@ -326,9 +611,19 @@ class MatplotlibWidget(QMainWindow):
         self.last_artist = None
         self.lstAnnotation = []
 
+    # 다이얼로그 설정값 업데이트
+    # main window -> Diaglog     : dlgChartType.__init__(self) 함수에서
+    # Diaglog     -> main window : dlgChartType.OnBtnClicked_OK(self) 함수에서
+    # (참고) dlgChartType 실행함수 : OnToolbarClick_DlgChartType(self)
+    def OnToolbarClick_DlgChartType(self):
+        dlg = dlgChartType()
+        dlg.exec_()
+
+
+
 
     # .csv 파일을 open 했을때 수행하는 일
-    def OnBtnClick_OpenFile(self):
+    def OnToolbarClick_OpenFile(self):
 
         global SPL_strFileName
         global SPL_dfData
@@ -370,8 +665,15 @@ class MatplotlibWidget(QMainWindow):
                 df["column_index"] = 0 # default 값, Y 그릴때 생성되는 값
                 df["filename"] = strFileName  # 파일이름 생성
                 df["file_sequence"] = df.index  # Sequnce를 생성
+
+                # Clock 데이터 만듬
+                lstColumn = df.columns.tolist()
+                if ("Clock" not in lstColumn):
+                    if ("작업일" in lstColumn) and (" 작업 시간" in lstColumn):
+                        df["Clock"] = df["작업일"] + ' ' + df[" 작업 시간"]
+
                 dfData = pd.DataFrame.copy(df[:])  # hard copy
-                # dfData.loc[0] = strFileName
+
 
                 # pd.DataFrame() 의 list 에 저장함
                 lstDataFrame.append(dfData)
@@ -411,12 +713,30 @@ class MatplotlibWidget(QMainWindow):
         lstColData = [ x0 for x0, x1 in SPL_lstChkData ]
         lstItems = self.listWidget_Columns.selectedItems()
 
+        iColumn = self.table_column_clicked # header column을 클릭했을때
+        if (iColumn<1) or (iColumn>4):
+            iColumn=2 # default 는 2(Y1)
+
         # print( SPL_lstChkData )
         for ItemElement in lstItems:
             ItemEntity = ItemElement.text()
             if ItemEntity not in lstColData:
-                SPL_lstChkData.append( [ItemEntity, 2] )
+                SPL_lstChkData.append( [ItemEntity, iColumn] )
+
+                if(iColumn==1)or(iColumn==4): # 추가하는 열이 'X' 또는 'L'일 경우 1개만 클릭
+                    iAppendRow = len(SPL_lstChkData)-1
+                    # 체크박스 클릭시 'X', 'L' 인 경우 다른 행에서도 열위치가 'X'(1), 'L'(4) 인 경우 none(0)으로 바꿈
+                    for iRow, (dname, iChkPos) in enumerate(SPL_lstChkData):
+                        if (iAppendRow != iRow):
+                            if ((SPL_lstChkData[iAppendRow][1] == 1) and (SPL_lstChkData[iRow][1] == 1)):
+                                SPL_lstChkData[iRow][1] = 0  # none(0), X(1), Y1(2), Y2(3), L(4)
+                            elif ((SPL_lstChkData[iAppendRow][1] == 4) and (SPL_lstChkData[iRow][1] == 4)):
+                                SPL_lstChkData[iRow][1] = 0  # none(0), X(1), Y1(2), Y2(3), L(4)
+
+
         # print( SPL_lstChkData )
+
+        self.table_column_clicked = -1 # reset
 
         # TableWidget
         self._UpdateCheckBoxAll()
@@ -519,6 +839,8 @@ class MatplotlibWidget(QMainWindow):
         self.table.resizeColumnsToContents()
         self.table.resizeRowsToContents()
         self.table.cellClicked.connect(self._cellclicked)
+        self.table.horizontalHeader().sectionClicked.connect(self._onHeaderClicked)
+
 
         self._UpdateCheckBoxState()
 
@@ -537,7 +859,6 @@ class MatplotlibWidget(QMainWindow):
                         ckbox.setChecked( True )
                     else:
                         ckbox.setChecked( False )
-
         # end of function
 
 
@@ -545,6 +866,11 @@ class MatplotlibWidget(QMainWindow):
     def _cellclicked(self, row, col):
         pass
         #print("_cellclicked... ", row, col)
+
+    def _onHeaderClicked(self, logicalIndex):
+        self.table_column_clicked = logicalIndex
+
+
 
 
     # DataFrame()의 column 이름이 중복일때 수정하기 위해
@@ -555,6 +881,7 @@ class MatplotlibWidget(QMainWindow):
 
         global SPL_lstChkData
         global SPL_dfData
+        global CFG_lstGrouping_index
 
         XAttr = []
         lstY1Attr = []
@@ -678,8 +1005,8 @@ class MatplotlibWidget(QMainWindow):
                 #   Y축 표시가 30개 이내 일때
                 #     선택된게 있을 때             : 모든 Ys          legend
                 #     선택된게 없을 때             : 모든 Ys          legend
-                
-                
+
+
                 # 색의 출처 : https://matplotlib.org/stable/users/prev_whats_new/dflt_style_changes.html
                 colorsY1 = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'
                           , '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
@@ -808,7 +1135,7 @@ class MatplotlibWidget(QMainWindow):
                             # 셀별로 값 확인하기 위해
                             if( XAttr == "column_index" ):
                                 lstColumn = SPL_dfData.columns.to_list()
-                                x_data = [ (lstColumn.index(YAttr)+random.random()*0.8-0.4) for x in range( len(x_data) ) ]
+                                x_data = [ (1+lstColumn.index(YAttr)-lstColumn.index(lstYAttr[0])+random.random()*0.8-0.4) for x in range( len(x_data) ) ]
 
 
 
@@ -836,8 +1163,8 @@ class MatplotlibWidget(QMainWindow):
                                                 y_data,
                                                 '-o',
                                                 linewidth=0.8,
-                                                drawstyle='steps-post',
-                                                alpha=CFG_Alpha_Selected,
+                                                drawstyle=CFG_Plot_DrawType,
+                                                alpha=CFG_Plot_Alpha_Selected,
                                                 picker=True, pickradius=5)  # 5 points tolerance
                                             line.set_label(YAttr)  # 'Figure Options' 창에서 Curve이름 표시하기 위해
                                             dicGlobalYLineToLegend[line] = YAttr
@@ -848,8 +1175,8 @@ class MatplotlibWidget(QMainWindow):
                                                 x_data,
                                                 y_data,
                                                 linewidth=0.8,
-                                                drawstyle='steps-post',
-                                                alpha=CFG_Alpha_Unselected,
+                                                drawstyle=CFG_Plot_DrawType,
+                                                alpha=CFG_Plot_Alpha_Unselected,
                                                 picker=True, pickradius=5)  # 5 points tolerance
                                             line.set_label(YAttr)  # 'Figure Options' 창에서 Curve이름 표시하기 위해
                                             dicGlobalYLineToLegend[line] = YAttr
@@ -869,9 +1196,9 @@ class MatplotlibWidget(QMainWindow):
                                                         y_data[npLegendDrawDataPos],
                                                         '-o',
                                                         linewidth=0.8,
-                                                        drawstyle='steps-post',
-                                                        alpha=CFG_Alpha_Selected,
-                                                        color=colorsY[lstLegendYValue_unique.index(LegendYValue) % len(colorsY)],
+                                                        drawstyle=CFG_Plot_DrawType,
+                                                        alpha=CFG_Plot_Alpha_Selected,
+                                                        color=colorsY1[lstLegendYValue_unique.index(LegendYValue) % len(colorsY1)],
                                                         picker=True, pickradius=5)  # 5 points tolerance
                                                     line.set_label(LegendYValue)  # 'Figure Options' 창에서 Curve이름 표시하기 위해
                                                     dicGlobalYLineToLegend[line] = LegendYValue
@@ -881,9 +1208,9 @@ class MatplotlibWidget(QMainWindow):
                                                         x_data[npLegendDrawDataPos],
                                                         y_data[npLegendDrawDataPos],
                                                         linewidth=0.8,
-                                                        drawstyle='steps-post',
-                                                        alpha=CFG_Alpha_Unselected,
-                                                        color=colorsY[lstLegendYValue_unique.index(LegendYValue) % len(colorsY)],
+                                                        drawstyle=CFG_Plot_DrawType,
+                                                        alpha=CFG_Plot_Alpha_Unselected,
+                                                        color=colorsY1[lstLegendYValue_unique.index(LegendYValue) % len(colorsY1)],
                                                         picker=True, pickradius=5)  # 5 points tolerance
                                                     line.set_label(LegendYValue)  # 'Figure Options' 창에서 Curve이름 표시하기 위해
                                                     dicGlobalYLineToLegend[line] = LegendYValue
@@ -919,8 +1246,8 @@ class MatplotlibWidget(QMainWindow):
                                             y_data,
                                             '-o',
                                             linewidth=0.8,
-                                            drawstyle='steps-post',
-                                            alpha=CFG_Alpha_Selected,
+                                            drawstyle=CFG_Plot_DrawType,
+                                            alpha=CFG_Plot_Alpha_Selected,
                                             color=colorsY[i%len(colorsY)],
                                             picker=True, pickradius=5)  # 5 points tolerance
                                         line.set_label(YAttr)  # 'Figure Options' 창에서 Curve이름 표시하기 위해
@@ -932,8 +1259,8 @@ class MatplotlibWidget(QMainWindow):
                                             x_data,
                                             y_data,
                                             linewidth=0.8,
-                                            drawstyle='steps-post',
-                                            alpha=CFG_Alpha_Unselected,
+                                            drawstyle=CFG_Plot_DrawType,
+                                            alpha=CFG_Plot_Alpha_Unselected,
                                             color=colorsY[i%len(colorsY)],
                                             picker=True, pickradius=5)  # 5 points tolerance
                                         line.set_label(YAttr)  # 'Figure Options' 창에서 Curve이름 표시하기 위해
@@ -1029,7 +1356,7 @@ class MatplotlibWidget(QMainWindow):
                                     # 셀별로 값 확인하기 위해서
                                     if (XAttr == "column_index"):
                                         lstColumn = SPL_dfData.columns.to_list()
-                                        x_data = [(lstColumn.index(YAttr)+random.random()*0.8-0.4) for x in range(len(x_data))]
+                                        x_data = [(1+lstColumn.index(YAttr)-lstColumn.index(lstYAttr[0])+random.random()*0.8-0.4) for x in range(len(x_data))]
 
                                     y_data = SPL_dfData[YAttr].to_numpy()
 
@@ -1042,8 +1369,8 @@ class MatplotlibWidget(QMainWindow):
                                                 y_data,
                                                 '-o',
                                                 linewidth=0.8,
-                                                drawstyle='steps-post',
-                                                alpha=CFG_Alpha_Selected,
+                                                drawstyle=CFG_Plot_DrawType,
+                                                alpha=CFG_Plot_Alpha_Selected,
                                                 picker=True, pickradius=5)  # 5 points tolerance
                                             line.set_label(YAttr)  # 'Figure Options' 창에서 Curve이름 표시하기 위해
                                             dicGlobalYLineToLegend[line] = YAttr
@@ -1054,8 +1381,8 @@ class MatplotlibWidget(QMainWindow):
                                                 x_data,
                                                 y_data,
                                                 linewidth=0.8,
-                                                drawstyle='steps-post',
-                                                alpha=CFG_Alpha_Unselected,
+                                                drawstyle=CFG_Plot_DrawType,
+                                                alpha=CFG_Plot_Alpha_Unselected,
                                                 picker=True, pickradius=5)  # 5 points tolerance
                                             line.set_label(YAttr)  # 'Figure Options' 창에서 Curve이름 표시하기 위해위해
                                             dicGlobalYLineToLegend[line] = YAttr
@@ -1073,11 +1400,11 @@ class MatplotlibWidget(QMainWindow):
                                                     y_data[lstDataPos],
                                                     '-o',
                                                     linewidth=0.8,
-                                                    drawstyle='steps-post',
-                                                    alpha=CFG_Alpha_Selected,
-                                                    color=colorsY1[j % len(colorsY1)],
+                                                    drawstyle=CFG_Plot_DrawType,
+                                                    alpha=CFG_Plot_Alpha_Selected,
+                                                    color=colorsY1[lstLegendYValue_unique.index(Legend) % len(colorsY1)],
                                                     picker=True, pickradius=5)  # 5 points tolerance
-                                                line.set_label(YAttr)  # 'Figure Options' 창에서 Curve이름 표시하기 위해위해
+                                                line.set_label(YAttr)  # 'Figure Options' 창에서 Curve이름 표시하기 위해
                                                 dicGlobalYLineToLegend[line] = Legend
                                                 lstGlobalYLine.append(line)
 
@@ -1086,11 +1413,11 @@ class MatplotlibWidget(QMainWindow):
                                                     x_data[lstDataPos],
                                                     y_data[lstDataPos],
                                                     linewidth=0.8,
-                                                    drawstyle='steps-post',
-                                                    alpha=CFG_Alpha_Unselected,
-                                                    color=colorsY1[j % len(colorsY1)],
+                                                    drawstyle=CFG_Plot_DrawType,
+                                                    alpha=CFG_Plot_Alpha_Unselected,
+                                                    color=colorsY1[lstLegendYValue_unique.index(Legend) % len(colorsY1)],
                                                     picker=True, pickradius=5)  # 5 points tolerance
-                                                line.set_label(YAttr)  # 'Figure Options' 창에서 Curve이름 표시하기 위해위해
+                                                line.set_label(YAttr)  # 'Figure Options' 창에서 Curve이름 표시하기 위해
                                                 dicGlobalYLineToLegend[line] = Legend
                                                 lstGlobalYLine.append(line)
 
@@ -1102,7 +1429,7 @@ class MatplotlibWidget(QMainWindow):
                                     # 셀별로 값 확인하기 위해
                                     if (XAttr == "column_index"):
                                         lstColumn = SPL_dfData.columns.to_list()
-                                        x_data = [ (lstColumn.index(YAttr)+random.random()*0.8-0.4) for x in range(len(x_data))]
+                                        x_data = [ (1+lstColumn.index(YAttr)-lstColumn.index(lstYAttr[0])+random.random()*0.8-0.4) for x in range(len(x_data))]
 
                                     y_data = SPL_dfData[YAttr].to_numpy()
 
@@ -1112,8 +1439,8 @@ class MatplotlibWidget(QMainWindow):
                                             y_data,
                                             '-o',
                                             linewidth=0.8,
-                                            drawstyle='steps-post',
-                                            alpha=CFG_Alpha_Selected,
+                                            drawstyle=CFG_Plot_DrawType,
+                                            alpha=CFG_Plot_Alpha_Selected,
                                             picker=True, pickradius=5)  # 5 points tolerance
                                         line.set_label(YAttr)  # 'Figure Options' 창에서 Curve이름 표시하기 위해
                                         dicGlobalYLineToLegend[line] = YAttr
@@ -1124,10 +1451,10 @@ class MatplotlibWidget(QMainWindow):
                                             x_data,
                                             y_data,
                                             linewidth=0.8,
-                                            drawstyle='steps-post',
-                                            alpha=CFG_Alpha_Unselected,
+                                            drawstyle=CFG_Plot_DrawType,
+                                            alpha=CFG_Plot_Alpha_Unselected,
                                             picker=True, pickradius=5)  # 5 points tolerance
-                                        line.set_label(YAttr)  # 'Figure Options' 창에서 Curve이름 표시하기 위해위해
+                                        line.set_label(YAttr)  # 'Figure Options' 창에서 Curve이름 표시하기 위해
                                         dicGlobalYLineToLegend[line] = YAttr
                                         lstGlobalYLine.append(line)
 
@@ -1206,9 +1533,9 @@ class MatplotlibWidget(QMainWindow):
                         lstColumn = SPL_dfData.columns.to_list()
                         lstColIndex = []
                         for YAttr in lstY1Attr:
-                            lstColIndex.append( lstColumn.index(YAttr) )
+                            lstColIndex.append( 1+lstColumn.index(YAttr)-lstColumn.index(lstYAttr[0]) )
                         for YAttr in lstY2Attr:
-                            lstColIndex.append( lstColumn.index(YAttr) )
+                            lstColIndex.append( 1+lstColumn.index(YAttr)-lstColumn.index(lstYAttr[0]) )
                         lstColIndex.append( min(lstColIndex)-0.5 )
                         lstColIndex.append( max(lstColIndex)+0.5 )
                         x_data = lstColIndex
@@ -1266,7 +1593,7 @@ class MatplotlibWidget(QMainWindow):
 
             # 원래 투명도로
             for line in self.dicY1LineToLegend.keys():
-                line.set_alpha( CFG_Alpha_Unselected )
+                line.set_alpha( CFG_Plot_Alpha_Unselected )
             # annotation 삭제
             for annotation in self.lstAnnotation:
                 annotation.remove()
